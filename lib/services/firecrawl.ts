@@ -31,11 +31,13 @@ interface FirecrawlResult {
  */
 export async function scrapeWebsiteContent(url: string): Promise<Partial<ScrapedData>> {
   try {
+    console.log(`[Firecrawl] Starting scrape for: ${url}`)
     const result = (await getFirecrawlApp().scrapeUrl(url, {
       formats: ['markdown'],
       onlyMainContent: true,
-      timeout: 60000,
+      timeout: 120000, // Increased to 2 minutes
     })) as FirecrawlResult
+    console.log(`[Firecrawl] Scrape completed for: ${url}`)
 
     if (!result || !result.markdown) {
       throw new Error('No content extracted from website')

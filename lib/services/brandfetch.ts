@@ -115,12 +115,15 @@ export async function extractFonts(domain: string): Promise<string[]> {
 export async function fetchBrandData(url: string): Promise<Partial<ScrapedData>> {
   try {
     const domain = new URL(url).hostname.replace('www.', '')
+    console.log(`[Brandfetch] Starting data extraction for domain: ${domain}`)
 
     const [logo, colors, fonts] = await Promise.all([
       extractLogo(domain),
       extractColors(domain),
       extractFonts(domain),
     ])
+
+    console.log(`[Brandfetch] Extraction complete for ${domain}: logo=${!!logo}, colors=${colors.length}, fonts=${fonts.length}`)
 
     return {
       logo: logo
