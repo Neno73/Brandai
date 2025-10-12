@@ -86,6 +86,7 @@ export function LandingPage() {
               <Button
                 variant="secondary"
                 className="min-w-[84px] h-10 px-4 text-sm font-bold"
+                onClick={() => router.push('/admin/login')}
               >
                 Log in
               </Button>
