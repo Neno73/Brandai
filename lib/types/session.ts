@@ -14,7 +14,7 @@ export interface Session {
 }
 
 export interface ScrapedData {
-  logo?: {
+  logo?: string | {
     original_url: string
     stored_url: string
     format: 'png'
@@ -33,6 +33,8 @@ export interface ScrapedData {
   audience?: string
   industry?: string
   sentiment?: string
+  requires_manual_input?: boolean
+  missing_fields?: string[]
 }
 
 export interface ProductImage {

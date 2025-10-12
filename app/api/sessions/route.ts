@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSession } from '@/lib/db/queries'
+import { createSession, findExistingSession } from '@/lib/db/queries'
 import { SessionCreateSchema } from '@/lib/utils/validation'
 import { generateMagicLinkToken } from '@/lib/utils/magic-link'
 import { sendMagicLink } from '@/lib/services/email'
@@ -18,6 +18,27 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, url } = validationResult.data
+
+    // Check for existing session with same email and URL
+    const existingSession = await findExistingSession(email, url)
+
+    if (existingSession) {
+      // Generate magic link for existing session
+      const magicLinkToken = generateMagicLinkToken(existingSession.id, email)
+      const magicLink = `${process.env.NEXT_PUBLIC_BASE_URL}/session/${existingSession.id}?token=${magicLinkToken}`
+
+      // Return existing session info for client to decide
+      return NextResponse.json({
+        duplicate: true,
+        existingSession: {
+          id: existingSession.id,
+          status: existingSession.status,
+          created_at: existingSession.created_at,
+          magicLink,
+        },
+        message: 'A session already exists for this URL and email',
+      })
+    }
 
     // Create session in database
     const session = await createSession(url, email)

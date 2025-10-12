@@ -11,9 +11,18 @@ const genAI = new GoogleGenerativeAI(apiKey)
 
 /**
  * Generate a brand merchandise concept based on scraped website data
+ * @param scrapedData - Brand data extracted from website
+ * @param regenerate - If true, forces creative variation for concept regeneration
  */
-export async function generateConcept(scrapedData: ScrapedData): Promise<string> {
+export async function generateConcept(
+  scrapedData: ScrapedData,
+  regenerate: boolean = false
+): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+
+  const regenerateInstruction = regenerate
+    ? '\n\nIMPORTANT: Generate a DIFFERENT creative concept than you would normally create. Explore alternative angles, themes, or visual directions while still capturing the brand essence. Avoid obvious or common interpretations.'
+    : ''
 
   const prompt = `You are a creative brand merchandise designer. Based on the following brand information, create a compelling merchandise concept that captures the brand's essence.
 
@@ -30,7 +39,7 @@ Create a short, focused merchandise concept (2-3 sentences) that:
 3. Is simple enough to be printed/embroidered
 4. Has broad appeal to the target audience
 
-Be specific about visual elements, color usage, and composition style.`
+Be specific about visual elements, color usage, and composition style.${regenerateInstruction}`
 
   const result = await model.generateContent(prompt)
   const response = result.response
@@ -45,13 +54,19 @@ Be specific about visual elements, color usage, and composition style.`
 
 /**
  * Generate a detailed motif prompt for image generation
+ * @param regenerate - If true, forces creative variation for motif regeneration
  */
 export async function generateMotifPrompt(
   concept: string,
   scrapedData: ScrapedData,
-  product: Product
+  product: Product,
+  regenerate: boolean = false
 ): Promise<string> {
   const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+
+  const regenerateInstruction = regenerate
+    ? '\n\nIMPORTANT: Generate a DIFFERENT visual interpretation than you would normally create. Explore alternative design elements, compositions, or artistic styles while maintaining the core concept and brand colors. Create a fresh, unique motif that feels distinctly different from a typical interpretation.'
+    : ''
 
   const prompt = `You are a graphic designer creating a print-ready motif for merchandise. Based on the concept below, generate a detailed image generation prompt.
 
@@ -71,7 +86,7 @@ Create a detailed image generation prompt (1-2 sentences) that:
 4. Avoids text/typography (unless explicitly part of the concept)
 5. Is suitable for ${product.name} merchandise
 
-Return ONLY the image generation prompt, nothing else.`
+Return ONLY the image generation prompt, nothing else.${regenerateInstruction}`
 
   const result = await model.generateContent(prompt)
   const response = result.response
@@ -82,6 +97,29 @@ Return ONLY the image generation prompt, nothing else.`
   }
 
   return text.trim()
+}
+
+/**
+ * Complete motif generation workflow
+ * Generates a motif for merchandise based on concept and brand data
+ * @param concept - The creative concept for the merchandise
+ * @param scrapedData - Brand data including colors, fonts, etc.
+ * @param product - Primary product for motif generation (typically T-Shirt)
+ * @param regenerate - If true, forces creative variation
+ */
+export async function generateMotif(
+  concept: string,
+  scrapedData: ScrapedData,
+  product: Product,
+  regenerate: boolean = false
+): Promise<string> {
+  // Generate the motif prompt with optional regeneration
+  const motifPrompt = await generateMotifPrompt(concept, scrapedData, product, regenerate)
+
+  // In a full implementation, this would call an image generation service
+  // For now, we return the prompt description which can be used for placeholder images
+  // or with external image generation services
+  return motifPrompt
 }
 
 /**

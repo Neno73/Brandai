@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession, updateSession, getProducts } from '@/lib/db/queries'
 import { fetchBrandData } from '@/lib/services/brandfetch'
 import { scrapeWebsiteContent } from '@/lib/services/firecrawl'
-import { generateConcept, generateMotifPrompt } from '@/lib/services/gemini'
+import { generateConcept, generateMotif } from '@/lib/services/gemini'
 import { sendMerchandiseEmail } from '@/lib/services/email'
 import { retryWithBackoff } from '@/lib/utils/error-handling'
 import type { ScrapedData, ProductImage } from '@/lib/types/session'
@@ -43,6 +43,42 @@ export async function POST(
       content: contentData.content || '',
     }
 
+    // Check for missing required data
+    const missingFields: string[] = []
+    let requiresManualInput = false
+
+    if (!scrapedData.logo) {
+      missingFields.push('logo')
+      requiresManualInput = true
+    }
+
+    if (!scrapedData.colors || scrapedData.colors.length < 2) {
+      missingFields.push('colors')
+      requiresManualInput = true
+    }
+
+    // If manual input is required, pause the workflow
+    if (requiresManualInput) {
+      console.log(`[${sessionId}] Missing required data: ${missingFields.join(', ')}. Awaiting manual input...`)
+
+      await updateSession(sessionId, {
+        status: 'concept',
+        scraped_data: {
+          ...scrapedData,
+          requires_manual_input: requiresManualInput,
+          missing_fields: missingFields,
+        },
+      })
+
+      return NextResponse.json({
+        success: false,
+        requires_manual_input: true,
+        missing_fields: missingFields,
+        message: 'Manual input required to proceed',
+        sessionId,
+      })
+    }
+
     await updateSession(sessionId, {
       status: 'concept',
       scraped_data: scrapedData,
@@ -61,7 +97,7 @@ export async function POST(
       concept,
     })
 
-    // Step 3: Generate Motif (for now, just store the prompt)
+    // Step 3: Generate Motif
     console.log(`[${sessionId}] Step 3: Generating motif...`)
     const products = await getProducts()
     if (products.length === 0) {
@@ -71,7 +107,7 @@ export async function POST(
     // Generate motif based on the first product (T-Shirt typically)
     const primaryProduct = products[0]
     const motifPrompt = await retryWithBackoff(
-      () => generateMotifPrompt(concept, scrapedData, primaryProduct),
+      () => generateMotif(concept, scrapedData, primaryProduct, false),
       3,
       1000
     )
@@ -89,6 +125,10 @@ export async function POST(
 
     // Step 4: Generate Product Mockups
     console.log(`[${sessionId}] Step 4: Generating product mockups...`)
+
+    // Note: Product generation uses the latest motif_image_url which was just stored in the database
+    // If products are regenerated separately (future enhancement), they should fetch the session
+    // to get the most recent motif_image_url, supporting motif regeneration scenarios
     const productImages: ProductImage[] = products.map((product) => ({
       product_id: product.id,
       product_name: product.name,
