@@ -13,7 +13,7 @@ const genAI = new GoogleGenerativeAI(apiKey)
  * Generate a brand merchandise concept based on scraped website data
  */
 export async function generateConcept(scrapedData: ScrapedData): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
 
   const prompt = `You are a creative brand merchandise designer. Based on the following brand information, create a compelling merchandise concept that captures the brand's essence.
 
@@ -51,7 +51,7 @@ export async function generateMotifPrompt(
   scrapedData: ScrapedData,
   product: Product
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
 
   const prompt = `You are a graphic designer creating a print-ready motif for merchandise. Based on the concept below, generate a detailed image generation prompt.
 
@@ -91,7 +91,7 @@ export async function generateMotifImage(
   motifPrompt: string,
   aspectRatio: '1:1' | '16:9' | '9:16' = '1:1'
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
 
   // Enhanced prompt for better image generation
   const enhancedPrompt = `${motifPrompt}
@@ -126,7 +126,7 @@ export async function generateProductVariation(
   product: Product,
   scrapedData: ScrapedData
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
 
   const prompt = `Adapt this merchandise concept for a specific product:
 

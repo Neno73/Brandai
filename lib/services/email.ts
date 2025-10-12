@@ -103,7 +103,7 @@ export async function sendMerchandiseEmail({
   `.trim()
 
   const { error } = await resend.emails.send({
-    from: 'BrendAI <noreply@brendai.com>',
+    from: 'BrendAI <noreply@brendai.sols.mk>',
     to,
     subject: `🎨 Your ${brandName} Merchandise Designs Are Ready!`,
     html,
@@ -175,7 +175,7 @@ export async function sendMagicLink(
   `.trim()
 
   const { error } = await resend.emails.send({
-    from: 'BrendAI <noreply@brendai.com>',
+    from: 'BrendAI <noreply@brendai.sols.mk>',
     to,
     subject: brandName
       ? `🔐 Access Your ${brandName} Designs`

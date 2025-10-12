@@ -15,15 +15,15 @@
 
 **Purpose**: Project initialization and basic Next.js structure
 
-- [ ] T001 [P] Initialize Next.js 14+ project with TypeScript in repository root using `npx create-next-app@latest . --typescript --app --tailwind --no-src-dir`
-- [ ] T002 [P] Configure shadcn/ui by running `npx shadcn-ui@latest init` with TypeScript, default style, slate base color, and CSS variables
-- [ ] T003 [P] Install core dependencies in `package.json`: `@neondatabase/serverless`, `brandfetch`, `@mendable/firecrawl-js`, `@google/generative-ai`, `resend`, `@react-pdf/renderer`, `zod`, `bcryptjs`, `class-variance-authority`, `clsx`, `tailwind-merge`
-- [ ] T004 [P] Create `.env.local` file with required environment variables: `DATABASE_URL`, `BRANDFETCH_API_KEY`, `FIRECRAWL_API_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `MAGIC_LINK_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `NEXT_PUBLIC_BASE_URL`
-- [ ] T005 [P] Configure TypeScript paths in `tsconfig.json` to support `@/` imports mapping to repository root
-- [ ] T006 [P] Add required shadcn/ui components: `npx shadcn-ui@latest add button card input badge dialog table progress alert skeleton separator dropdown-menu`
-- [ ] T007 [P] Create project directory structure: `lib/db/`, `lib/services/`, `lib/types/`, `lib/utils/`, `lib/constants/`, `components/ui/`, `components/landing/`, `components/session/`, `components/admin/`, `components/shared/`
-- [ ] T008 [P] Configure ESLint and Prettier in `.eslintrc.json` and `.prettierrc` with Next.js and TypeScript rules
-- [ ] T009 [P] Create `lib/utils/cn.ts` with clsx and tailwind-merge utility function for className merging
+- [X] T001 [P] Initialize Next.js 14+ project with TypeScript in repository root using `npx create-next-app@latest . --typescript --app --tailwind --no-src-dir`
+- [X] T002 [P] Configure shadcn/ui by running `npx shadcn-ui@latest init` with TypeScript, default style, slate base color, and CSS variables
+- [X] T003 [P] Install core dependencies in `package.json`: `@neondatabase/serverless`, `brandfetch`, `@mendable/firecrawl-js`, `@google/generative-ai`, `resend`, `@react-pdf/renderer`, `zod`, `bcryptjs`, `class-variance-authority`, `clsx`, `tailwind-merge`
+- [X] T004 [P] Create `.env.local` file with required environment variables: `DATABASE_URL`, `BRANDFETCH_API_KEY`, `FIRECRAWL_API_KEY`, `GEMINI_API_KEY`, `RESEND_API_KEY`, `BLOB_READ_WRITE_TOKEN`, `MAGIC_LINK_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `NEXT_PUBLIC_BASE_URL`
+- [X] T005 [P] Configure TypeScript paths in `tsconfig.json` to support `@/` imports mapping to repository root
+- [X] T006 [P] Add required shadcn/ui components: `npx shadcn-ui@latest add button card input badge dialog table progress alert skeleton separator dropdown-menu`
+- [X] T007 [P] Create project directory structure: `lib/db/`, `lib/services/`, `lib/types/`, `lib/utils/`, `lib/constants/`, `components/ui/`, `components/landing/`, `components/session/`, `components/admin/`, `components/shared/`
+- [X] T008 [P] Configure ESLint and Prettier in `.eslintrc.json` and `.prettierrc` with Next.js and TypeScript rules
+- [X] T009 [P] Create `lib/utils/cn.ts` with clsx and tailwind-merge utility function for className merging
 
 ---
 
@@ -33,21 +33,21 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T010 Create database schema in `lib/db/migrations.sql` with sessions table (id, email, url, status, scraped_data, concept, motif_image_url, product_images, created_at, updated_at) and products table (id, name, base_image_url, print_zones, constraints, max_colors, recommended_elements, is_archived, created_at)
-- [ ] T011 [P] Create TypeScript types in `lib/types/session.ts` for Session, SessionStatus, ScrapedData, ProductImage entities matching database schema
-- [ ] T012 [P] Create TypeScript types in `lib/types/product.ts` for Product, ProductInput, PrintZone, ElementType entities
-- [ ] T013 Create Neon database client in `lib/db/client.ts` using `@neondatabase/serverless` with connection pooling
-- [ ] T014 Create database query functions in `lib/db/queries.ts` for: `createSession()`, `getSession()`, `updateSession()`, `getProducts()`, `createProduct()`, `updateProduct()`, `archiveProduct()`
-- [ ] T015 [P] Seed database with 5 default products in `lib/db/seed.sql`: T-Shirt (front/back), Hoodie (front/back/sleeves), Mug (wrap), USB Stick (all-over), Socks (ankle)
-- [ ] T016 [P] Create validation schemas in `lib/utils/validation.ts` using Zod for: URL validation, email validation, color hex code validation, session creation input, API request bodies
-- [ ] T017 [P] Create magic link utilities in `lib/utils/magic-link.ts` for: `generateMagicLink()`, `validateMagicLink()` using HMAC signing with `MAGIC_LINK_SECRET`
-- [ ] T018 [P] Create image processing utilities in `lib/utils/image-processing.ts` for: logo format conversion (to PNG), quality validation (minimum 500x500px), base64 encoding
-- [ ] T019 [P] Create error handling utilities in `lib/utils/error-handler.ts` for: API error responses, error logging, retry logic wrapper
-- [ ] T020 [P] Create product constraints constants in `lib/constants/product-constraints.ts` with default constraints for all 5 products (print zones, color limits, size restrictions)
-- [ ] T021 Configure Vercel Blob Storage integration for image uploads in `lib/services/blob-storage.ts` using `@vercel/blob` SDK
-- [ ] T022 Create root layout in `app/layout.tsx` with Next.js metadata, Tailwind CSS globals import, and proper HTML structure
-- [ ] T023 [P] Create loading spinner component in `components/shared/loading-spinner.tsx` using shadcn/ui Skeleton
-- [ ] T024 [P] Create error message component in `components/shared/error-message.tsx` using shadcn/ui Alert
+- [X] T010 Create database schema in `lib/db/migrations.sql` with sessions table (id, email, url, status, scraped_data, concept, motif_image_url, product_images, created_at, updated_at) and products table (id, name, base_image_url, print_zones, constraints, max_colors, recommended_elements, is_archived, created_at)
+- [X] T011 [P] Create TypeScript types in `lib/types/session.ts` for Session, SessionStatus, ScrapedData, ProductImage entities matching database schema
+- [X] T012 [P] Create TypeScript types in `lib/types/product.ts` for Product, ProductInput, PrintZone, ElementType entities
+- [X] T013 Create Neon database client in `lib/db/client.ts` using `@neondatabase/serverless` with connection pooling
+- [X] T014 Create database query functions in `lib/db/queries.ts` for: `createSession()`, `getSession()`, `updateSession()`, `getProducts()`, `createProduct()`, `updateProduct()`, `archiveProduct()`
+- [X] T015 [P] Seed database with 5 default products in `lib/db/seed.sql`: T-Shirt (front/back), Hoodie (front/back/sleeves), Mug (wrap), USB Stick (all-over), Socks (ankle)
+- [X] T016 [P] Create validation schemas in `lib/utils/validation.ts` using Zod for: URL validation, email validation, color hex code validation, session creation input, API request bodies
+- [X] T017 [P] Create magic link utilities in `lib/utils/magic-link.ts` for: `generateMagicLink()`, `validateMagicLink()` using HMAC signing with `MAGIC_LINK_SECRET`
+- [X] T018 [P] Create image processing utilities in `lib/utils/image-processing.ts` for: logo format conversion (to PNG), quality validation (minimum 500x500px), base64 encoding
+- [X] T019 [P] Create error handling utilities in `lib/utils/error-handler.ts` for: API error responses, error logging, retry logic wrapper
+- [X] T020 [P] Create product constraints constants in `lib/constants/product-constraints.ts` with default constraints for all 5 products (print zones, color limits, size restrictions)
+- [X] T021 Configure Vercel Blob Storage integration for image uploads in `lib/services/blob-storage.ts` using `@vercel/blob` SDK
+- [X] T022 Create root layout in `app/layout.tsx` with Next.js metadata, Tailwind CSS globals import, and proper HTML structure
+- [X] T023 [P] Create loading spinner component in `components/shared/loading-spinner.tsx` using shadcn/ui Skeleton
+- [X] T024 [P] Create error message component in `components/shared/error-message.tsx` using shadcn/ui Alert
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -61,47 +61,47 @@
 
 ### Stage 1: Brand Scraping & Data Extraction [US1]
 
-- [ ] T025 [P] [US1] Create Brandfetch API client in `lib/services/brandfetch.ts` with functions: `extractLogo()`, `extractColors()`, `extractFonts()`
-- [ ] T026 [P] [US1] Create Firecrawl scraping service in `lib/services/firecrawl.ts` with function `scrapeWebsiteContent()` to extract title, description, headings, and ~500 tokens of text
-- [ ] T027 [US1] Create scraping orchestration API route in `app/api/scrape/route.ts` (POST) that: validates input, creates session, calls Brandfetch + Firecrawl in parallel, analyzes text for tone/themes/sentiment, stores scraped_data in database, returns session_id (depends on T025, T026)
-- [ ] T028 [US1] Create scraping status API route in `app/api/scrape/status/[sessionId]/route.ts` (GET) that returns session status and scraped_data for polling
-- [ ] T029 [P] [US1] Create landing page hero component in `components/landing/hero.tsx` with BrendAI branding, value proposition copy, and visual assets
-- [ ] T030 [P] [US1] Create input form component in `components/landing/input-form.tsx` with URL input, email input, submit button, and client-side validation using shadcn/ui Input and Button
-- [ ] T031 [US1] Create landing page in `app/page.tsx` that renders hero and input form, calls `/api/scrape` on submit, redirects to `/session/[sessionId]` on success
-- [ ] T032 [P] [US1] Create brand analysis display component in `components/session/brand-analysis.tsx` showing logo, color swatches, fonts, tone, themes, audience with shadcn/ui Card
+- [X] T025 [P] [US1] Create Brandfetch API client in `lib/services/brandfetch.ts` with functions: `extractLogo()`, `extractColors()`, `extractFonts()`
+- [X] T026 [P] [US1] Create Firecrawl scraping service in `lib/services/firecrawl.ts` with function `scrapeWebsiteContent()` to extract title, description, headings, and ~500 tokens of text
+- [X] T027 [US1] Create scraping orchestration API route in `app/api/scrape/route.ts` (POST) that: validates input, creates session, calls Brandfetch + Firecrawl in parallel, analyzes text for tone/themes/sentiment, stores scraped_data in database, returns session_id (depends on T025, T026)
+- [X] T028 [US1] Create scraping status API route in `app/api/scrape/status/[sessionId]/route.ts` (GET) that returns session status and scraped_data for polling
+- [X] T029 [P] [US1] Create landing page hero component in `components/landing/hero.tsx` with BrendAI branding, value proposition copy, and visual assets
+- [X] T030 [P] [US1] Create input form component in `components/landing/input-form.tsx` with URL input, email input, submit button, and client-side validation using shadcn/ui Input and Button
+- [X] T031 [US1] Create landing page in `app/page.tsx` that renders hero and input form, calls `/api/scrape` on submit, redirects to `/session/[sessionId]` on success
+- [X] T032 [P] [US1] Create brand analysis display component in `components/session/brand-analysis.tsx` showing logo, color swatches, fonts, tone, themes, audience with shadcn/ui Card
 
 ### Stage 2: Creative Concept Generation [US1]
 
-- [ ] T033 [US1] Create Gemini text generation service in `lib/services/gemini-text.ts` with function `generateConcept(scrapedData)` that analyzes brand data and produces 2-3 paragraph concept with prominent theme
-- [ ] T034 [US1] Create concept generation API route in `app/api/generate-concept/route.ts` (POST) that: validates session_id, retrieves scraped_data, calls Gemini, stores concept in database, returns concept and prominent_theme
-- [ ] T035 [P] [US1] Create concept display component in `components/session/concept-display.tsx` showing generated concept text in read-only format with prominent theme badge using shadcn/ui Card and Badge
-- [ ] T036 [P] [US1] Create countdown timer component in `components/session/countdown-timer.tsx` with 3-minute countdown, warning at 30 seconds, auto-proceed callback using React state and useEffect
+- [X] T033 [US1] Create Gemini text generation service in `lib/services/gemini-text.ts` with function `generateConcept(scrapedData)` that analyzes brand data and produces 2-3 paragraph concept with prominent theme
+- [X] T034 [US1] Create concept generation API route in `app/api/generate-concept/route.ts` (POST) that: validates session_id, retrieves scraped_data, calls Gemini, stores concept in database, returns concept and prominent_theme
+- [X] T035 [P] [US1] Create concept display component in `components/session/concept-display.tsx` showing generated concept text in read-only format with prominent theme badge using shadcn/ui Card and Badge
+- [X] T036 [P] [US1] Create countdown timer component in `components/session/countdown-timer.tsx` with 3-minute countdown, warning at 30 seconds, auto-proceed callback using React state and useEffect
 
 ### Stage 3: Design Motif Generation [US1]
 
-- [ ] T037 [US1] Create Gemini image generation service in `lib/services/gemini-image.ts` with function `generateMotif(logo, colors, concept)` that creates single image with 6 cohesive design elements using brand colors
-- [ ] T038 [US1] Create motif generation API route in `app/api/generate-motif/route.ts` (POST) that: validates session_id, retrieves session data, calls Gemini Image, uploads motif to Vercel Blob, stores motif_image_url in database, returns motif URL and storytelling text
-- [ ] T039 [P] [US1] Create motif display component in `components/session/motif-display.tsx` showing 6 design elements image and storytelling explanation with shadcn/ui Card
+- [X] T037 [US1] Create Gemini image generation service in `lib/services/gemini-image.ts` with function `generateMotif(logo, colors, concept)` that creates single image with 6 cohesive design elements using brand colors
+- [X] T038 [US1] Create motif generation API route in `app/api/generate-motif/route.ts` (POST) that: validates session_id, retrieves session data, calls Gemini Image, uploads motif to Vercel Blob, stores motif_image_url in database, returns motif URL and storytelling text
+- [X] T039 [P] [US1] Create motif display component in `components/session/motif-display.tsx` showing 6 design elements image and storytelling explanation with shadcn/ui Card
 
 ### Stage 4: Product Mockup Generation [US1]
 
-- [ ] T040 [US1] Extend `lib/services/gemini-image.ts` with function `generateProductMockup(motif, logo, colors, product, constraints)` that selects appropriate elements and creates product-specific mockup
-- [ ] T041 [US1] Create product generation API route in `app/api/generate-products/route.ts` (POST) that: validates session_id, retrieves session and products, makes 5 sequential Gemini Image calls (one per product), uploads each mockup to Vercel Blob, stores product_images array in database, uses streaming response for progress updates
-- [ ] T042 [P] [US1] Create product gallery component in `components/session/product-gallery.tsx` displaying all 5 mockups in grid layout with product names using shadcn/ui Card
+- [X] T040 [US1] Extend `lib/services/gemini-image.ts` with function `generateProductMockup(motif, logo, colors, product, constraints)` that selects appropriate elements and creates product-specific mockup
+- [X] T041 [US1] Create product generation API route in `app/api/generate-products/route.ts` (POST) that: validates session_id, retrieves session and products, makes 5 sequential Gemini Image calls (one per product), uploads each mockup to Vercel Blob, stores product_images array in database, uses streaming response for progress updates
+- [X] T042 [P] [US1] Create product gallery component in `components/session/product-gallery.tsx` displaying all 5 mockups in grid layout with product names using shadcn/ui Card
 
 ### Stage 5: PDF Presentation & Email Delivery [US1]
 
-- [ ] T043 [US1] Create PDF generator service in `lib/services/pdf-generator.ts` using `@react-pdf/renderer` with 7 sections: cover page, brand analysis, creative concept, motif showcase, merchandise applications, brand guidelines, next steps
-- [ ] T044 [US1] Create presentation generation API route in `app/api/create-presentation/route.ts` (POST) that: validates session_id, retrieves complete session, generates PDF with React PDF, uploads PDF to Vercel Blob, returns pdf_url
-- [ ] T045 [US1] Create email service in `lib/services/email.ts` using Resend SDK with function `sendBrandKitEmail(session, pdfUrl, magicLink)` that sends email with PDF attachment and magic link
-- [ ] T046 [US1] Create email sending API route in `app/api/send-email/route.ts` (POST) that: validates session_id, generates magic link, calls email service, handles retry logic for failures, returns email_id and magic_link
-- [ ] T047 [US1] Create session page in `app/session/[sessionId]/page.tsx` that: retrieves session data via server component, displays current stage (scraping/concept/motif/products/complete), orchestrates automatic progression through all 5 stages, shows countdown timers at stages 2 and 3, displays final success message with download link
+- [X] T043 [US1] Create PDF generator service in `lib/services/pdf-generator.ts` using `@react-pdf/renderer` with 7 sections: cover page, brand analysis, creative concept, motif showcase, merchandise applications, brand guidelines, next steps
+- [X] T044 [US1] Create presentation generation API route in `app/api/create-presentation/route.ts` (POST) that: validates session_id, retrieves complete session, generates PDF with React PDF, uploads PDF to Vercel Blob, returns pdf_url
+- [X] T045 [US1] Create email service in `lib/services/email.ts` using Resend SDK with function `sendBrandKitEmail(session, pdfUrl, magicLink)` that sends email with PDF attachment and magic link
+- [X] T046 [US1] Create email sending API route in `app/api/send-email/route.ts` (POST) that: validates session_id, generates magic link, calls email service, handles retry logic for failures, returns email_id and magic_link
+- [X] T047 [US1] Create session page in `app/session/[sessionId]/page.tsx` that: retrieves session data via server component, displays current stage (scraping/concept/motif/products/complete), orchestrates automatic progression through all 5 stages, shows countdown timers at stages 2 and 3, displays final success message with download link
 
 ### Integration & Workflow [US1]
 
-- [ ] T048 [US1] Implement automatic workflow progression in `app/session/[sessionId]/page.tsx`: scraping → concept (auto-call after scrape completes) → motif (auto-call after 3min or user proceeds) → products (auto-call after 3min or user proceeds) → PDF → email
-- [ ] T049 [US1] Add error handling for each workflow stage with retry buttons and manual fallback options in session page
-- [ ] T050 [US1] Add progress indicator to session page showing "Step X of 5" with visual progress bar using shadcn/ui Progress
+- [X] T048 [US1] Implement automatic workflow progression in `app/session/[sessionId]/page.tsx`: scraping → concept (auto-call after scrape completes) → motif (auto-call after 3min or user proceeds) → products (auto-call after 3min or user proceeds) → PDF → email
+- [X] T049 [US1] Add error handling for each workflow stage with retry buttons and manual fallback options in session page
+- [X] T050 [US1] Add progress indicator to session page showing "Step X of 5" with visual progress bar using shadcn/ui Progress
 
 **Checkpoint**: User Story 1 COMPLETE - Full end-to-end brand kit generation working, independently testable by submitting URL and receiving PDF
 
