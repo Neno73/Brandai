@@ -28,10 +28,18 @@ export async function POST(
     console.log(`[${sessionId}] Step 1: Scraping website...`)
     await updateSession(sessionId, { status: 'scraping' })
 
-    const [brandData, contentData] = await Promise.all([
-      retryWithBackoff(() => fetchBrandData(session.url), 3, 1000),
-      retryWithBackoff(() => scrapeWebsiteContent(session.url), 3, 1000),
-    ])
+    let brandData, contentData
+    try {
+      console.log(`[${sessionId}] Fetching brand data and scraping content in parallel...`)
+      ;[brandData, contentData] = await Promise.all([
+        retryWithBackoff(() => fetchBrandData(session.url), 3, 1000),
+        retryWithBackoff(() => scrapeWebsiteContent(session.url), 3, 1000),
+      ])
+      console.log(`[${sessionId}] Scraping completed successfully. Brand: ${brandData.title}, Content length: ${contentData.content?.length || 0}`)
+    } catch (scrapingError) {
+      console.error(`[${sessionId}] Scraping failed:`, scrapingError)
+      throw scrapingError
+    }
 
     const scrapedData: ScrapedData = {
       title: brandData.title || contentData.title || 'Unknown Brand',

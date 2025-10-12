@@ -60,12 +60,26 @@ export async function POST(request: NextRequest) {
 
     // Trigger background processing (using Next.js Route Handlers)
     // In production, this should be a background job/queue
-    fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/sessions/${session.id}/process`, {
+    const processUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/sessions/${session.id}/process`
+    console.log(`[Session:${session.id}] Triggering background process at: ${processUrl}`)
+
+    fetch(processUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-    }).catch((err) => {
-      console.error('Failed to trigger background processing:', err)
     })
+      .then((response) => {
+        if (!response.ok) {
+          console.error(`[Session:${session.id}] Background process failed with status: ${response.status}`)
+          return response.text().then(text => {
+            console.error(`[Session:${session.id}] Error response:`, text)
+          })
+        } else {
+          console.log(`[Session:${session.id}] Background process triggered successfully`)
+        }
+      })
+      .catch((err) => {
+        console.error(`[Session:${session.id}] Failed to trigger background processing:`, err)
+      })
 
     return NextResponse.json({
       sessionId: session.id,
