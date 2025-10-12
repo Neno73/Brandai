@@ -1,0 +1,814 @@
+openapi: 3.0.3
+info:
+  title: BrendAI API
+  description: Automated brand merchandise design system API
+  version: 1.0.0
+  contact:
+    name: BrendAI Team
+
+servers:
+  - url: https://brendai.vercel.app/api
+    description: Production
+  - url: http://localhost:3000/api
+    description: Local development
+
+tags:
+  - name: Workflow
+    description: Brand kit generation workflow
+  - name: Sessions
+    description: Session management
+  - name: Admin
+    description: Administrative operations
+
+paths:
+  /scrape:
+    post:
+      tags: [Workflow]
+      summary: Stage 1 - Scrape brand data from website
+      description: Orchestrates Brandfetch + Firecrawl to extract logo, colors, fonts, and text content
+      operationId: scrapeWebsite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, url]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                url:
+                  type: string
+                  format: uri
+                  example: "https://example.com"
+      responses:
+        '201':
+          description: Session created, scraping initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [scraping]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /scrape/status/{sessionId}:
+    get:
+      tags: [Workflow]
+      summary: Check scraping status
+      description: Poll for scraping completion and scraped data
+      operationId: getScrapingStatus
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Scraping status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [scraping, concept, failed]
+                  scraped_data:
+                    $ref: '#/components/schemas/ScrapedData'
+                  requires_manual_input:
+                    type: boolean
+                  missing_fields:
+                    type: array
+                    items:
+                      type: string
+                      enum: [logo, colors]
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /generate-concept:
+    post:
+      tags: [Workflow]
+      summary: Stage 2 - Generate creative concept
+      description: Uses Gemini to analyze scraped data and produce merchandise concept
+      operationId: generateConcept
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                regenerate:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Concept generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  concept:
+                    type: string
+                    minLength: 100
+                    maxLength: 2000
+                  prominent_theme:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /generate-motif:
+    post:
+      tags: [Workflow]
+      summary: Stage 3 - Generate design motif
+      description: Uses Gemini Image to create 6 cohesive brand elements
+      operationId: generateMotif
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                regenerate:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Motif generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  motif_image_url:
+                    type: string
+                    format: uri
+                  storytelling:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /generate-products:
+    post:
+      tags: [Workflow]
+      summary: Stage 4 - Generate product mockups
+      description: Creates 5 product mockups using motif (sequential Gemini Image calls)
+      operationId: generateProducts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Products generated (streaming response)
+          content:
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  product_name:
+                    type: string
+                  progress:
+                    type: integer
+                    minimum: 1
+                    maximum: 5
+                  image_url:
+                    type: string
+                    format: uri
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /create-presentation:
+    post:
+      tags: [Workflow]
+      summary: Stage 5 - Generate PDF presentation
+      description: Creates PDF with React PDF renderer
+      operationId: createPresentation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: PDF generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pdf_url:
+                    type: string
+                    format: uri
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /send-email:
+    post:
+      tags: [Workflow]
+      summary: Stage 5 - Send email with PDF and magic link
+      description: Sends email via Resend with presentation attachment
+      operationId: sendEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [session_id]
+              properties:
+                session_id:
+                  type: string
+                  format: uuid
+                email_type:
+                  type: string
+                  enum: [completion, recovery]
+                  default: completion
+      responses:
+        '200':
+          description: Email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email_id:
+                    type: string
+                  magic_link:
+                    type: string
+                    format: uri
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /sessions/{sessionId}:
+    get:
+      tags: [Sessions]
+      summary: Get session details
+      description: Retrieve complete session data (for magic link page)
+      operationId: getSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Sessions]
+      summary: Update session data
+      description: Update scraped data (logo, colors) from manual input
+      operationId: updateSession
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scraped_data:
+                  $ref: '#/components/schemas/ScrapedData'
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/sessions:
+    get:
+      tags: [Admin]
+      summary: List all sessions
+      description: Admin dashboard - paginated session list
+      operationId: listSessions
+      security:
+        - AdminCookie: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [scraping, concept, motif, products, complete, failed]
+      responses:
+        '200':
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessionSummary'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/products:
+    get:
+      tags: [Admin]
+      summary: List all products
+      description: Get active product templates
+      operationId: listProducts
+      security:
+        - AdminCookie: []
+      responses:
+        '200':
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Admin]
+      summary: Create product template
+      description: Add new product for mockup generation
+      operationId: createProduct
+      security:
+        - AdminCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /admin/products/{productId}:
+    patch:
+      tags: [Admin]
+      summary: Update product template
+      description: Modify existing product
+      operationId: updateProduct
+      security:
+        - AdminCookie: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Admin]
+      summary: Archive product template
+      description: Soft delete product (sets is_archived=true)
+      operationId: archiveProduct
+      security:
+        - AdminCookie: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Product archived
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Product in use by active sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Product is used in 12 active sessions. Archive instead?"
+                  active_sessions:
+                    type: integer
+
+  /admin/login:
+    post:
+      tags: [Admin]
+      summary: Admin authentication
+      description: Validate credentials and set session cookie
+      operationId: adminLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: admin_session=authenticated; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    AdminCookie:
+      type: apiKey
+      in: cookie
+      name: admin_session
+
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    ScrapedData:
+      type: object
+      required: [logo, colors, title, description, content, tone, themes, audience, industry, sentiment]
+      properties:
+        logo:
+          type: object
+          required: [stored_url, format, width, height]
+          properties:
+            original_url:
+              type: string
+              format: uri
+            stored_url:
+              type: string
+              format: uri
+            format:
+              type: string
+              enum: [png]
+            width:
+              type: integer
+            height:
+              type: integer
+        colors:
+          type: array
+          items:
+            type: string
+            pattern: '^#[0-9A-F]{6}$'
+          minItems: 2
+          maxItems: 5
+        fonts:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
+        description:
+          type: string
+        headings:
+          type: array
+          items:
+            type: string
+        content:
+          type: string
+          maxLength: 2000
+        tagline:
+          type: string
+          nullable: true
+        tone:
+          type: string
+        themes:
+          type: array
+          items:
+            type: string
+        audience:
+          type: string
+        industry:
+          type: string
+        sentiment:
+          type: string
+
+    Session:
+      type: object
+      required: [id, email, url, status, scraped_data, product_images, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        url:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [scraping, concept, motif, products, complete, failed]
+        scraped_data:
+          $ref: '#/components/schemas/ScrapedData'
+        concept:
+          type: string
+          nullable: true
+        motif_image_url:
+          type: string
+          format: uri
+          nullable: true
+        product_images:
+          type: array
+          items:
+            type: object
+            required: [product_id, product_name, image_url, generated_at, success]
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              product_name:
+                type: string
+              image_url:
+                type: string
+                format: uri
+              generated_at:
+                type: string
+                format: date-time
+              generation_duration_ms:
+                type: integer
+              success:
+                type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SessionSummary:
+      type: object
+      required: [id, email, url, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        url:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [scraping, concept, motif, products, complete, failed]
+        created_at:
+          type: string
+          format: date-time
+
+    Product:
+      type: object
+      required: [id, name, base_image_url, print_zones, max_colors, is_archived, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        base_image_url:
+          type: string
+          format: uri
+        print_zones:
+          type: array
+          items:
+            type: string
+            enum: [front, back, sleeves, wrap, ankle, pocket, all-over]
+          minItems: 1
+        constraints:
+          type: string
+          nullable: true
+        max_colors:
+          type: integer
+          minimum: 1
+          maximum: 999
+        recommended_elements:
+          type: array
+          items:
+            type: string
+            enum: [icon, pattern, graphic, typography]
+          nullable: true
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    ProductInput:
+      type: object
+      required: [name, base_image_url, print_zones, max_colors]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+        base_image_url:
+          type: string
+          format: uri
+        print_zones:
+          type: array
+          items:
+            type: string
+            enum: [front, back, sleeves, wrap, ankle, pocket, all-over]
+          minItems: 1
+        constraints:
+          type: string
+        max_colors:
+          type: integer
+          minimum: 1
+          maximum: 999
+          default: 8
+        recommended_elements:
+          type: array
+          items:
+            type: string
+            enum: [icon, pattern, graphic, typography]
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    Unauthorized:
+      description: Authentication required or invalid credentials
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid credentials"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Session not found"
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Too many requests. Please try again later."
+              retry_after:
+                type: integer
+                description: Seconds until rate limit resets
+
+    InternalError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal server error"
+              request_id:
+                type: string
+                format: uuid
