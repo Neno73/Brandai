@@ -26,14 +26,31 @@ export async function validateCredentials(
   email: string,
   password: string
 ): Promise<boolean> {
+  // Debug logging
+  console.log('Validating credentials:', {
+    inputEmail: email,
+    inputEmailLength: email.length,
+    adminEmail: ADMIN_EMAIL,
+    adminEmailLength: ADMIN_EMAIL.length,
+    emailMatch: email === ADMIN_EMAIL,
+    hasPasswordHash: !!ADMIN_PASSWORD_HASH,
+    passwordHashLength: ADMIN_PASSWORD_HASH.length,
+  })
+
   // Check email matches admin email
   if (email !== ADMIN_EMAIL) {
+    console.log('Email mismatch!', {
+      expected: JSON.stringify(ADMIN_EMAIL),
+      received: JSON.stringify(email),
+    })
     return false
   }
 
   // Verify password against hash
   try {
-    return await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
+    const result = await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
+    console.log('Password comparison result:', result)
+    return result
   } catch (error) {
     console.error('Failed to validate credentials:', error)
     return false
