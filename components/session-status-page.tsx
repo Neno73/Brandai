@@ -93,13 +93,11 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
 
     // Poll for updates if not complete or failed
     const interval = setInterval(() => {
-      if (session && session.status !== 'complete' && session.status !== 'failed') {
-        fetchSession()
-      }
+      fetchSession()
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [sessionId, token, session])
+  }, [sessionId, token])
 
   // Timer countdown effect
   useEffect(() => {
