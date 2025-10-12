@@ -2,16 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getProducts, createProduct } from '@/lib/db/queries'
 import { z } from 'zod'
 
+const PrintZoneEnum = z.enum(['front', 'back', 'sleeves', 'wrap', 'ankle', 'pocket', 'all-over'])
+const ElementTypeEnum = z.enum(['icon', 'pattern', 'graphic', 'typography'])
+
 const ProductCreateSchema = z.object({
   name: z.string().min(1),
   base_image_url: z.string().url(),
-  print_zones: z.array(z.string()).min(1),
+  print_zones: z.array(PrintZoneEnum).min(1),
   constraints: z.string().optional(),
   max_colors: z.number().min(1).max(16).default(8),
-  recommended_elements: z.array(z.string()).optional(),
+  recommended_elements: z.array(ElementTypeEnum).optional(),
 })
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const products = await getProducts()
 

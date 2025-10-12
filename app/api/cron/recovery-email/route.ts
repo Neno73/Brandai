@@ -12,6 +12,8 @@ import { generateMagicLink } from '@/lib/utils/magic-link'
 //   }]
 // }
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Verify the request is from Vercel Cron

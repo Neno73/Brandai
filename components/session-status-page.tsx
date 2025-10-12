@@ -443,7 +443,7 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
                 ⚠️ Manual Input Required
               </CardTitle>
               <CardDescription className="text-amber-800">
-                We couldn't automatically extract some required information from your website. Please provide the missing details below to continue.
+                We couldn&apos;t automatically extract some required information from your website. Please provide the missing details below to continue.
               </CardDescription>
             </CardHeader>
             <CardContent>

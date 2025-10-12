@@ -2,7 +2,6 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import type { Session } from '@/lib/types/session'
 
 interface SessionDetailProps {
