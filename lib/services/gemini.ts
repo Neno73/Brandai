@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ScrapedData } from '@/lib/types/session'
 import type { Product } from '@/lib/types/product'
+import { getPrompt } from '@/lib/db/queries/prompts'
 
 let genAI: GoogleGenerativeAI | null = null
 
@@ -20,6 +21,24 @@ function getGenAI(): GoogleGenerativeAI {
 }
 
 /**
+ * Replace template variables with actual values
+ * @param template - Template string with {{variable}} placeholders
+ * @param variables - Object with variable values
+ * @returns Template with variables replaced
+ */
+function applyTemplateVariables(
+  template: string,
+  variables: Record<string, string>
+): string {
+  let result = template
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{{${key}}}`, 'g')
+    result = result.replace(regex, value)
+  }
+  return result
+}
+
+/**
  * Generate a brand merchandise concept based on scraped website data
  * @param scrapedData - Brand data extracted from website
  * @param regenerate - If true, forces creative variation for concept regeneration
@@ -30,18 +49,34 @@ export async function generateConcept(
 ): Promise<string> {
   const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
+  // Fetch prompt template from database
+  const promptData = await getPrompt('concept_generation')
+
   const regenerateInstruction = regenerate
     ? '\n\nIMPORTANT: Generate a DIFFERENT creative concept than you would normally create. Explore alternative angles, themes, or visual directions while still capturing the brand essence. Avoid obvious or common interpretations.'
     : ''
 
-  const prompt = `You are a creative brand merchandise designer. Based on the following brand information, create a compelling merchandise concept that captures the brand's essence.
+  // Prepare template variables
+  const variables = {
+    brandName: scrapedData.title || 'Unknown',
+    description: scrapedData.description || 'N/A',
+    colors: scrapedData.colors?.join(', ') || 'N/A',
+    fonts: scrapedData.fonts?.join(', ') || 'N/A',
+    headings: scrapedData.headings?.slice(0, 5).join(', ') || 'N/A',
+    regenerateInstruction,
+  }
+
+  // Apply template or use fallback
+  const prompt = promptData
+    ? applyTemplateVariables(promptData.template, variables)
+    : `You are a creative brand merchandise designer. Based on the following brand information, create a compelling merchandise concept that captures the brand's essence.
 
 Brand Information:
-- Brand Name: ${scrapedData.title || 'Unknown'}
-- Description: ${scrapedData.description || 'N/A'}
-- Primary Colors: ${scrapedData.colors?.join(', ') || 'N/A'}
-- Typography Style: ${scrapedData.fonts?.join(', ') || 'N/A'}
-- Key Content Themes: ${scrapedData.headings?.slice(0, 5).join(', ') || 'N/A'}
+- Brand Name: ${variables.brandName}
+- Description: ${variables.description}
+- Primary Colors: ${variables.colors}
+- Typography Style: ${variables.fonts}
+- Key Content Themes: ${variables.headings}
 
 Create a short, focused merchandise concept (2-3 sentences) that:
 1. Reflects the brand's visual identity and messaging
@@ -49,7 +84,7 @@ Create a short, focused merchandise concept (2-3 sentences) that:
 3. Is simple enough to be printed/embroidered
 4. Has broad appeal to the target audience
 
-Be specific about visual elements, color usage, and composition style.${regenerateInstruction}`
+Be specific about visual elements, color usage, and composition style.${variables.regenerateInstruction}`
 
   const result = await model.generateContent(prompt)
   const response = result.response
@@ -74,29 +109,46 @@ export async function generateMotifPrompt(
 ): Promise<string> {
   const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
+  // Fetch prompt template from database
+  const promptData = await getPrompt('motif_prompt_generation')
+
   const regenerateInstruction = regenerate
     ? '\n\nIMPORTANT: Generate a DIFFERENT visual interpretation than you would normally create. Explore alternative design elements, compositions, or artistic styles while maintaining the core concept and brand colors. Create a fresh, unique motif that feels distinctly different from a typical interpretation.'
     : ''
 
-  const prompt = `You are a graphic designer creating a print-ready motif for merchandise. Based on the concept below, generate a detailed image generation prompt.
+  // Prepare template variables
+  const variables = {
+    concept,
+    colors: scrapedData.colors?.join(', ') || 'vibrant, balanced palette',
+    productName: product.name,
+    printZones: product.print_zones.join(', '),
+    maxColors: product.max_colors.toString(),
+    constraints: product.constraints || 'None',
+    regenerateInstruction,
+  }
+
+  // Apply template or use fallback
+  const prompt = promptData
+    ? applyTemplateVariables(promptData.template, variables)
+    : `You are a graphic designer creating a print-ready motif for merchandise. Based on the concept below, generate a detailed image generation prompt.
 
 Merchandise Concept:
-${concept}
+${variables.concept}
 
-Brand Colors: ${scrapedData.colors?.join(', ') || 'vibrant, balanced palette'}
-Product Type: ${product.name}
-Print Zones: ${product.print_zones.join(', ')}
-Max Colors: ${product.max_colors}
-Constraints: ${product.constraints || 'None'}
+Brand Colors: ${variables.colors}
+Product Type: ${variables.productName}
+Print Zones: ${variables.printZones}
+Max Colors: ${variables.maxColors}
+Constraints: ${variables.constraints}
 
 Create a detailed image generation prompt (1-2 sentences) that:
 1. Describes the visual motif clearly and specifically
 2. Specifies composition, style, and visual elements
 3. Respects the color and print zone constraints
 4. Avoids text/typography (unless explicitly part of the concept)
-5. Is suitable for ${product.name} merchandise
+5. Is suitable for ${variables.productName} merchandise
 
-Return ONLY the image generation prompt, nothing else.${regenerateInstruction}`
+Return ONLY the image generation prompt, nothing else.${variables.regenerateInstruction}`
 
   const result = await model.generateContent(prompt)
   const response = result.response
@@ -176,18 +228,35 @@ export async function generateProductVariation(
 ): Promise<string> {
   const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
-  const prompt = `Adapt this merchandise concept for a specific product:
+  // Fetch prompt template from database
+  const promptData = await getPrompt('product_variation')
 
-Base Concept: ${baseConcept}
+  // Prepare template variables
+  const variables = {
+    concept: baseConcept,
+    productName: product.name,
+    printZones: product.print_zones.join(', '),
+    maxColors: product.max_colors.toString(),
+    constraints: product.constraints || 'None',
+    recommendedElements: product.recommended_elements?.join(', ') || 'Any',
+    colors: scrapedData.colors?.join(', ') || 'N/A',
+  }
+
+  // Apply template or use fallback
+  const prompt = promptData
+    ? applyTemplateVariables(promptData.template, variables)
+    : `Adapt this merchandise concept for a specific product:
+
+Base Concept: ${variables.concept}
 
 Product Details:
-- Name: ${product.name}
-- Print Zones: ${product.print_zones.join(', ')}
-- Max Colors: ${product.max_colors}
-- Constraints: ${product.constraints || 'None'}
-- Recommended Elements: ${product.recommended_elements?.join(', ') || 'Any'}
+- Name: ${variables.productName}
+- Print Zones: ${variables.printZones}
+- Max Colors: ${variables.maxColors}
+- Constraints: ${variables.constraints}
+- Recommended Elements: ${variables.recommendedElements}
 
-Brand Colors: ${scrapedData.colors?.join(', ') || 'N/A'}
+Brand Colors: ${variables.colors}
 
 Provide specific guidance (2-3 sentences) on how to adapt the concept for this product, considering:
 1. Print zone placement and sizing

@@ -27,9 +27,15 @@ export async function POST(request: NextRequest) {
       const magicLinkToken = generateMagicLinkToken(existingSession.id, email)
       const magicLink = `${process.env.NEXT_PUBLIC_BASE_URL}/session/${existingSession.id}?token=${magicLinkToken}`
 
+      // Send magic link email only if real email provided (not temp email)
+      if (!email.startsWith('temp-')) {
+        await sendMagicLink(email, magicLink)
+      }
+
       // Return existing session info for client to decide
       return NextResponse.json({
         duplicate: true,
+        sessionId: existingSession.id,
         existingSession: {
           id: existingSession.id,
           status: existingSession.status,
@@ -47,8 +53,10 @@ export async function POST(request: NextRequest) {
     const magicLinkToken = generateMagicLinkToken(session.id, email)
     const magicLink = `${process.env.NEXT_PUBLIC_BASE_URL}/session/${session.id}?token=${magicLinkToken}`
 
-    // Send magic link email
-    await sendMagicLink(email, magicLink)
+    // Send magic link email only if real email provided (not temp email)
+    if (!email.startsWith('temp-')) {
+      await sendMagicLink(email, magicLink)
+    }
 
     // Trigger background processing (using Next.js Route Handlers)
     // In production, this should be a background job/queue
@@ -60,9 +68,11 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({
-      id: session.id,
+      sessionId: session.id,
       status: session.status,
-      message: 'Session created successfully. Check your email for the magic link!',
+      message: email.startsWith('temp-')
+        ? 'Session created successfully!'
+        : 'Session created successfully. Check your email for the magic link!',
     })
   } catch (error) {
     console.error('Error creating session:', error)

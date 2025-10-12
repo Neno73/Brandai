@@ -8,8 +8,11 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Protect /admin/* routes except /admin/login
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+  // Protect /admin/* and /dashboard/* routes except /admin/login
+  if (
+    (pathname.startsWith('/admin') && pathname !== '/admin/login') ||
+    pathname.startsWith('/dashboard')
+  ) {
     const token = request.cookies.get('admin_session')?.value
 
     if (!token) {
@@ -60,5 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/api/admin/:path*'],
 }
