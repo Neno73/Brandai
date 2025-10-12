@@ -70,3 +70,8 @@ export function generateMagicLink(sessionId: string, email: string): string {
 export function getSessionUrl(sessionId: string): string {
   return `${BASE_URL}/session/${sessionId}`
 }
+
+/**
+ * Alias for validateMagicLinkToken
+ */
+export const verifyMagicLinkToken = validateMagicLinkToken

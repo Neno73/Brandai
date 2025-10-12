@@ -39,9 +39,8 @@ export interface ProductImage {
   product_id: string
   product_name: string
   image_url: string
-  generated_at: string
-  generation_duration_ms: number
-  success: boolean
+  print_zones: string[]
+  design_notes: string
 }
 
 export interface SessionCreateInput {
