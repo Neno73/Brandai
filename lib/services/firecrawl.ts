@@ -1,7 +1,22 @@
 import FirecrawlApp from '@mendable/firecrawl-js'
 import type { ScrapedData } from '@/lib/types/session'
 
-const app = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY! })
+let app: FirecrawlApp | null = null
+
+/**
+ * Lazy initialization of the Firecrawl client
+ * Only checks for API key when actually needed at runtime
+ */
+function getFirecrawlApp(): FirecrawlApp {
+  if (!app) {
+    const apiKey = process.env.FIRECRAWL_API_KEY
+    if (!apiKey) {
+      throw new Error('FIRECRAWL_API_KEY is required')
+    }
+    app = new FirecrawlApp({ apiKey })
+  }
+  return app
+}
 
 interface FirecrawlResult {
   markdown?: string
@@ -16,7 +31,7 @@ interface FirecrawlResult {
  */
 export async function scrapeWebsiteContent(url: string): Promise<Partial<ScrapedData>> {
   try {
-    const result = (await app.scrapeUrl(url, {
+    const result = (await getFirecrawlApp().scrapeUrl(url, {
       formats: ['markdown'],
       onlyMainContent: true,
       timeout: 60000,

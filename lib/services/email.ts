@@ -1,11 +1,21 @@
 import { Resend } from 'resend'
 
-const apiKey = process.env.RESEND_API_KEY
-if (!apiKey) {
-  throw new Error('RESEND_API_KEY is required')
-}
+let resend: Resend | null = null
 
-const resend = new Resend(apiKey)
+/**
+ * Lazy initialization of the Resend client
+ * Only checks for API key when actually needed at runtime
+ */
+function getResend(): Resend {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is required')
+    }
+    resend = new Resend(apiKey)
+  }
+  return resend
+}
 
 export interface SendMerchandiseEmailParams {
   to: string
@@ -102,7 +112,7 @@ export async function sendMerchandiseEmail({
 </html>
   `.trim()
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: 'BrendAI <noreply@brendai.sols.mk>',
     to,
     subject: `🎨 Your ${brandName} Merchandise Designs Are Ready!`,
@@ -174,7 +184,7 @@ export async function sendMagicLink(
 </html>
   `.trim()
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: 'BrendAI <noreply@brendai.sols.mk>',
     to,
     subject: brandName
@@ -270,7 +280,7 @@ export async function sendRecoveryEmail(
 </html>
   `.trim()
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: 'BrendAI <noreply@brendai.sols.mk>',
     to,
     subject: `Your brand kit is ${progress}% complete - finish designing →`,

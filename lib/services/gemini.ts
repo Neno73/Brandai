@@ -2,12 +2,22 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { ScrapedData } from '@/lib/types/session'
 import type { Product } from '@/lib/types/product'
 
-const apiKey = process.env.GEMINI_API_KEY
-if (!apiKey) {
-  throw new Error('GEMINI_API_KEY is required')
-}
+let genAI: GoogleGenerativeAI | null = null
 
-const genAI = new GoogleGenerativeAI(apiKey)
+/**
+ * Lazy initialization of the Gemini API client
+ * Only checks for API key when actually needed at runtime
+ */
+function getGenAI(): GoogleGenerativeAI {
+  if (!genAI) {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is required')
+    }
+    genAI = new GoogleGenerativeAI(apiKey)
+  }
+  return genAI
+}
 
 /**
  * Generate a brand merchandise concept based on scraped website data
@@ -18,7 +28,7 @@ export async function generateConcept(
   scrapedData: ScrapedData,
   regenerate: boolean = false
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
   const regenerateInstruction = regenerate
     ? '\n\nIMPORTANT: Generate a DIFFERENT creative concept than you would normally create. Explore alternative angles, themes, or visual directions while still capturing the brand essence. Avoid obvious or common interpretations.'
@@ -62,7 +72,7 @@ export async function generateMotifPrompt(
   product: Product,
   regenerate: boolean = false
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
   const regenerateInstruction = regenerate
     ? '\n\nIMPORTANT: Generate a DIFFERENT visual interpretation than you would normally create. Explore alternative design elements, compositions, or artistic styles while maintaining the core concept and brand colors. Create a fresh, unique motif that feels distinctly different from a typical interpretation.'
@@ -129,7 +139,7 @@ export async function generateMotifImage(
   motifPrompt: string,
   aspectRatio: '1:1' | '16:9' | '9:16' = '1:1'
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
   // Enhanced prompt for better image generation
   const enhancedPrompt = `${motifPrompt}
@@ -164,7 +174,7 @@ export async function generateProductVariation(
   product: Product,
   scrapedData: ScrapedData
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+  const model = getGenAI().getGenerativeModel({ model: 'gemini-flash-latest' })
 
   const prompt = `Adapt this merchandise concept for a specific product:
 
