@@ -67,6 +67,26 @@ export async function getSessionsByEmail(email: string): Promise<Session[]> {
   return result as Session[]
 }
 
+export async function findExistingSession(email: string, url: string): Promise<Session | null> {
+  const result = await sql`
+    SELECT * FROM sessions
+    WHERE email = ${email} AND url = ${url}
+    ORDER BY created_at DESC
+    LIMIT 1
+  `
+  return result[0] as Session || null
+}
+
+export async function findAbandonedSessions(): Promise<Session[]> {
+  const result = await sql`
+    SELECT * FROM sessions
+    WHERE status IN ('concept', 'motif')
+    AND updated_at < NOW() - INTERVAL '24 hours'
+    ORDER BY updated_at DESC
+  `
+  return result as Session[]
+}
+
 // Product queries
 export async function getProducts(): Promise<Product[]> {
   const result = await sql`

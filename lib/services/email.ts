@@ -187,3 +187,97 @@ export async function sendMagicLink(
     throw new Error(`Failed to send magic link: ${error.message}`)
   }
 }
+
+/**
+ * Send abandoned session recovery email
+ */
+export async function sendRecoveryEmail(
+  to: string,
+  sessionId: string,
+  brandName: string,
+  magicLink: string,
+  progress: number
+): Promise<void> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your brand kit is ${progress}% complete</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 28px;">⏱️ Your Design Is Waiting!</h1>
+  </div>
+
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      Hi there! 👋
+    </p>
+
+    <p style="font-size: 16px; margin-bottom: 20px;">
+      You started creating merchandise designs for <strong>${brandName}</strong>, but didn't finish!
+    </p>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+      <h3 style="margin-top: 0; color: #f59e0b;">Your Progress: ${progress}%</h3>
+      <div style="background: #e5e7eb; height: 8px; border-radius: 4px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: ${progress}%;">
+        </div>
+      </div>
+      <p style="font-size: 14px; color: #666; margin-top: 10px; margin-bottom: 0;">
+        Pick up where you left off and complete your design!
+      </p>
+    </div>
+
+    <p style="font-size: 16px; margin-bottom: 30px;">
+      We've saved your progress. Click below to continue designing:
+    </p>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${magicLink}" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px;">
+        🎨 Finish My Design →
+      </a>
+    </div>
+
+    <div style="background: #d1fae5; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+      <p style="margin: 0; font-size: 14px; color: #065f46;">
+        <strong>✨ What's Next:</strong><br>
+        • Review and customize your design concept<br>
+        • Choose from multiple design variations<br>
+        • Get instant mockups on 5+ products<br>
+        • Download your complete brand kit
+      </p>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;">
+
+    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">
+      Session ID: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${sessionId}</code>
+    </p>
+
+    <p style="font-size: 14px; color: #666; margin-top: 30px;">
+      If you no longer need this, you can safely ignore this email.
+    </p>
+
+    <p style="font-size: 14px; color: #999; margin-top: 20px; text-align: center;">
+      BrendAI - Automated Brand Merchandise Design<br>
+      <a href="${process.env.NEXT_PUBLIC_BASE_URL}" style="color: #667eea; text-decoration: none;">Visit our website</a>
+    </p>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  const { error } = await resend.emails.send({
+    from: 'BrendAI <noreply@brendai.sols.mk>',
+    to,
+    subject: `Your brand kit is ${progress}% complete - finish designing →`,
+    html,
+  })
+
+  if (error) {
+    throw new Error(`Failed to send recovery email: ${error.message}`)
+  }
+}

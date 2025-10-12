@@ -115,14 +115,14 @@
 
 ### Implementation for User Story 2
 
-- [ ] T051 [P] [US2] Add `regenerate` boolean parameter support to `generateConcept()` function in `lib/services/gemini-text.ts` to force creative variation
-- [ ] T052 [US2] Update concept generation API route in `app/api/generate-concept/route.ts` to handle `regenerate: true` parameter and maintain edit history
-- [ ] T053 [P] [US2] Add "Regenerate Concept" button to concept display component in `components/session/concept-display.tsx` with loading state during regeneration
-- [ ] T054 [P] [US2] Create color picker component in `components/session/color-picker.tsx` using shadcn/ui Dropdown Menu for editing hex codes
-- [ ] T055 [US2] Add color editing capability to session page in `app/session/[sessionId]/page.tsx` that updates scraped_data.colors in database via PATCH request
-- [ ] T056 [US2] Add logo replacement upload in session page with file validation and Vercel Blob upload
-- [ ] T057 [US2] Implement timer persistence across concept regeneration in session page (reset countdown on regenerate)
-- [ ] T058 [US2] Add auto-proceed logic in session page that preserves user edits (colors, logo) when 3-minute timer expires
+- [X] T051 [P] [US2] Add `regenerate` boolean parameter support to `generateConcept()` function in `lib/services/gemini-text.ts` to force creative variation
+- [X] T052 [US2] Update concept generation API route in `app/api/generate-concept/route.ts` to handle `regenerate: true` parameter and maintain edit history
+- [X] T053 [P] [US2] Add "Regenerate Concept" button to concept display component in `components/session/concept-display.tsx` with loading state during regeneration
+- [X] T054 [P] [US2] Create color picker component in `components/session/color-picker.tsx` using shadcn/ui Dropdown Menu for editing hex codes
+- [X] T055 [US2] Add color editing capability to session page in `app/session/[sessionId]/page.tsx` that updates scraped_data.colors in database via PATCH request
+- [X] T056 [US2] Add logo replacement upload in session page with file validation and Vercel Blob upload
+- [X] T057 [US2] Implement timer persistence across concept regeneration in session page (reset countdown on regenerate)
+- [X] T058 [US2] Add auto-proceed logic in session page that preserves user edits (colors, logo) when 3-minute timer expires
 
 **Checkpoint**: User Story 2 COMPLETE - Concept regeneration working with edits preserved, independently testable
 
@@ -136,13 +136,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T059 [US3] Add missing data detection logic to scraping orchestration in `app/api/scrape/route.ts` that sets `requires_manual_input: true` flag when logo missing or fewer than 2 colors
-- [ ] T060 [US3] Update session status endpoint in `app/api/scrape/status/[sessionId]/route.ts` to include `missing_fields` array
-- [ ] T061 [P] [US3] Create logo upload component in `components/session/logo-upload.tsx` with file input, preview, and quality validation (500x500px minimum) using shadcn/ui Dialog
-- [ ] T062 [P] [US3] Create color selection component in `components/session/color-picker.tsx` requiring minimum 2 colors with hex code input
-- [ ] T063 [US3] Create session update API route in `app/api/sessions/[sessionId]/route.ts` (PATCH) that updates scraped_data with manual inputs and validates completeness
-- [ ] T064 [US3] Add manual input flow to session page in `app/session/[sessionId]/page.tsx` that: detects missing data, displays error message, blocks progression, shows upload/selection UI, validates inputs, proceeds when complete
-- [ ] T065 [US3] Add fallback manual input form in session page for complete scraping failure showing all fields (logo, colors, optional text guidance)
+- [X] T059 [US3] Add missing data detection logic to scraping orchestration in `app/api/scrape/route.ts` that sets `requires_manual_input: true` flag when logo missing or fewer than 2 colors
+- [X] T060 [US3] Update session status endpoint in `app/api/scrape/status/[sessionId]/route.ts` to include `missing_fields` array
+- [X] T061 [P] [US3] Create logo upload component in `components/session/logo-upload.tsx` with file input, preview, and quality validation (500x500px minimum) using shadcn/ui Dialog
+- [X] T062 [P] [US3] Create color selection component in `components/session/color-picker.tsx` requiring minimum 2 colors with hex code input
+- [X] T063 [US3] Create session update API route in `app/api/sessions/[sessionId]/route.ts` (PATCH) that updates scraped_data with manual inputs and validates completeness
+- [X] T064 [US3] Add manual input flow to session page in `app/session/[sessionId]/page.tsx` that: detects missing data, displays error message, blocks progression, shows upload/selection UI, validates inputs, proceeds when complete
+- [X] T065 [US3] Add fallback manual input form in session page for complete scraping failure showing all fields (logo, colors, optional text guidance)
 
 **Checkpoint**: User Story 3 COMPLETE - Manual input fallback working, independently testable with minimal websites
 
@@ -156,11 +156,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T066 [P] [US4] Add `regenerate` boolean parameter support to `generateMotif()` function in `lib/services/gemini-image.ts` to force new element set with same constraints
-- [ ] T067 [US4] Update motif generation API route in `app/api/generate-motif/route.ts` to handle `regenerate: true` parameter and maintain family consistency across elements
-- [ ] T068 [P] [US4] Add "Regenerate Motif" button to motif display component in `components/session/motif-display.tsx` with loading state and progress indicator
-- [ ] T069 [US4] Update product generation logic in `app/api/generate-products/route.ts` to use most recent motif_image_url from database (supporting regenerated motifs)
-- [ ] T070 [US4] Add timer reset logic to session page in `app/session/[sessionId]/page.tsx` when motif is regenerated (restart 3-minute countdown)
+- [X] T066 [P] [US4] Add `regenerate` boolean parameter support to `generateMotif()` function in `lib/services/gemini-image.ts` to force new element set with same constraints
+- [X] T067 [US4] Update motif generation API route in `app/api/generate-motif/route.ts` to handle `regenerate: true` parameter and maintain family consistency across elements
+- [X] T068 [P] [US4] Add "Regenerate Motif" button to motif display component in `components/session/motif-display.tsx` with loading state and progress indicator
+- [X] T069 [US4] Update product generation logic in `app/api/generate-products/route.ts` to use most recent motif_image_url from database (supporting regenerated motifs)
+- [X] T070 [US4] Add timer reset logic to session page in `app/session/[sessionId]/page.tsx` when motif is regenerated (restart 3-minute countdown)
 
 **Checkpoint**: User Story 4 COMPLETE - Motif regeneration working, independently testable
 
@@ -174,13 +174,13 @@
 
 ### Implementation for User Story 5
 
-- [ ] T071 [P] [US5] Create session retrieval Server Action in `app/actions/get-session.ts` that validates magic link token and returns full session data
-- [ ] T072 [US5] Update session page in `app/session/[sessionId]/page.tsx` to support magic link URL parameter validation and session loading without authentication
-- [ ] T073 [P] [US5] Add "Download PDF" button to session page completion stage that triggers `/api/create-presentation` and downloads latest PDF
-- [ ] T074 [P] [US5] Add edit mode toggle to session page allowing color changes and concept/motif regeneration after initial completion
-- [ ] T075 [US5] Create duplicate session detection in scraping API route `app/api/scrape/route.ts` that checks for existing sessions with same URL+email and prompts user with resume or start new options
-- [ ] T076 [P] [US5] Create abandoned session recovery cron job in `app/api/cron/recovery-email/route.ts` that: identifies sessions abandoned >24 hours in concept/motif stages, sends recovery email with magic link, uses Vercel Cron configuration
-- [ ] T077 [US5] Add recovery email template to email service in `lib/services/email.ts` with subject "Your brand kit is 60% complete - finish designing →"
+- [X] T071 [P] [US5] Create session retrieval Server Action in `app/actions/get-session.ts` that validates magic link token and returns full session data
+- [X] T072 [US5] Update session page in `app/session/[sessionId]/page.tsx` to support magic link URL parameter validation and session loading without authentication
+- [X] T073 [P] [US5] Add "Download PDF" button to session page completion stage that triggers `/api/create-presentation` and downloads latest PDF
+- [X] T074 [P] [US5] Add edit mode toggle to session page allowing color changes and concept/motif regeneration after initial completion
+- [X] T075 [US5] Create duplicate session detection in scraping API route `app/api/scrape/route.ts` that checks for existing sessions with same URL+email and prompts user with resume or start new options
+- [X] T076 [P] [US5] Create abandoned session recovery cron job in `app/api/cron/recovery-email/route.ts` that: identifies sessions abandoned >24 hours in concept/motif stages, sends recovery email with magic link, uses Vercel Cron configuration
+- [X] T077 [US5] Add recovery email template to email service in `lib/services/email.ts` with subject "Your brand kit is 60% complete - finish designing →"
 
 **Checkpoint**: User Story 5 COMPLETE - Magic link session resumption working, independently testable
 
@@ -194,19 +194,19 @@
 
 ### Implementation for User Story 6
 
-- [ ] T078 [P] [US6] Create admin authentication utilities in `lib/utils/admin-auth.ts` with functions: `validateCredentials(email, password)`, `setAuthCookie()`, `validateAuthCookie()` using bcryptjs for password hashing
-- [ ] T079 [US6] Create admin login API route in `app/api/admin/login/route.ts` (POST) that validates credentials against `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` environment variables and sets HTTP-only session cookie
-- [ ] T080 [P] [US6] Create admin middleware in `middleware.ts` that protects `/admin/*` routes by validating auth cookie and redirecting to login if missing
-- [ ] T081 [P] [US6] Create admin login page in `app/admin/login/page.tsx` with email/password form using shadcn/ui Input and Button
-- [ ] T082 [P] [US6] Create session table component in `components/admin/session-table.tsx` displaying all sessions with columns: email, URL, status, created date using shadcn/ui Table with pagination
-- [ ] T083 [P] [US6] Create session detail component in `components/admin/session-detail.tsx` showing complete session data: scraped_data, concept, motif, product images, timestamps
-- [ ] T084 [US6] Create admin dashboard page in `app/admin/page.tsx` that fetches and displays session table with filters for status
-- [ ] T085 [US6] Create sessions list API route in `app/api/admin/sessions/route.ts` (GET) with pagination (limit/offset) and status filtering
-- [ ] T086 [P] [US6] Create product form component in `components/admin/product-form.tsx` with fields: name, base image upload, print zones (multi-select checkboxes), constraints textarea, max colors number input, recommended elements (multi-select) using shadcn/ui Form
-- [ ] T087 [US6] Create product management page in `app/admin/products/page.tsx` showing list of all products with archive/edit actions and "Add Product" button
-- [ ] T088 [US6] Create products API routes in `app/api/admin/products/route.ts` (GET/POST) for listing and creating products with image upload to Vercel Blob
-- [ ] T089 [US6] Create product update/archive API route in `app/api/admin/products/[productId]/route.ts` (PATCH/DELETE) with validation preventing deletion of products in use
-- [ ] T090 [US6] Add active sessions check to product archive endpoint that counts sessions using product and prevents deletion with error response
+- [X] T078 [P] [US6] Create admin authentication utilities in `lib/utils/admin-auth.ts` with functions: `validateCredentials(email, password)`, `setAuthCookie()`, `validateAuthCookie()` using bcryptjs for password hashing
+- [X] T079 [US6] Create admin login API route in `app/api/admin/login/route.ts` (POST) that validates credentials against `ADMIN_EMAIL` and `ADMIN_PASSWORD_HASH` environment variables and sets HTTP-only session cookie
+- [X] T080 [P] [US6] Create admin middleware in `middleware.ts` that protects `/admin/*` routes by validating auth cookie and redirecting to login if missing
+- [X] T081 [P] [US6] Create admin login page in `app/admin/login/page.tsx` with email/password form using shadcn/ui Input and Button
+- [X] T082 [P] [US6] Create session table component in `components/admin/session-table.tsx` displaying all sessions with columns: email, URL, status, created date using shadcn/ui Table with pagination
+- [X] T083 [P] [US6] Create session detail component in `components/admin/session-detail.tsx` showing complete session data: scraped_data, concept, motif, product images, timestamps
+- [X] T084 [US6] Create admin dashboard page in `app/admin/page.tsx` that fetches and displays session table with filters for status
+- [X] T085 [US6] Create sessions list API route in `app/api/admin/sessions/route.ts` (GET) with pagination (limit/offset) and status filtering
+- [X] T086 [P] [US6] Create product form component in `components/admin/product-form.tsx` with fields: name, base image upload, print zones (multi-select checkboxes), constraints textarea, max colors number input, recommended elements (multi-select) using shadcn/ui Form
+- [X] T087 [US6] Create product management page in `app/admin/products/page.tsx` showing list of all products with archive/edit actions and "Add Product" button
+- [X] T088 [US6] Create products API routes in `app/api/admin/products/route.ts` (GET/POST) for listing and creating products with image upload to Vercel Blob
+- [X] T089 [US6] Create product update/archive API route in `app/api/admin/products/[productId]/route.ts` (PATCH/DELETE) with validation preventing deletion of products in use
+- [X] T090 [US6] Add active sessions check to product archive endpoint that counts sessions using product and prevents deletion with error response
 
 **Checkpoint**: User Story 6 COMPLETE - Admin product management working, independently testable
 

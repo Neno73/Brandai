@@ -8,6 +8,9 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ColorPicker } from '@/components/session/color-picker'
+import { LogoUploader } from '@/components/session/logo-uploader'
+import { MotifDisplay } from '@/components/session/motif-display'
 import type { Session, SessionStatus } from '@/lib/types/session'
 
 interface SessionStatusPageProps {
@@ -57,6 +60,11 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [regenerating, setRegenerating] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
+  const [autoProceeding, setAutoProceeding] = useState(false)
+  const [continuingProcessing, setContinuingProcessing] = useState(false)
+  const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -89,6 +97,237 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
 
     return () => clearInterval(interval)
   }, [sessionId, token, session])
+
+  // Timer countdown effect
+  useEffect(() => {
+    // Only start timer when status is 'concept' and concept exists
+    if (session?.status === 'concept' && session.concept) {
+      // Initialize timer to 3 minutes (180 seconds) if not set
+      if (timeRemaining === null) {
+        setTimeRemaining(180)
+      }
+    }
+  }, [session?.status, session?.concept, timeRemaining])
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining <= 0 || autoProceeding) {
+      return
+    }
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 0) {
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [timeRemaining, autoProceeding])
+
+  // Auto-proceed when timer reaches 0
+  useEffect(() => {
+    if (timeRemaining === 0 && session?.status === 'concept' && !autoProceeding) {
+      handleAutoProceed()
+    }
+  }, [timeRemaining, session?.status, autoProceeding])
+
+  const handleAutoProceed = async () => {
+    if (!session) return
+
+    setAutoProceeding(true)
+    setError(null)
+
+    try {
+      // Trigger background processing to continue with motif and products
+      const response = await fetch(`/api/sessions/${sessionId}/process`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to proceed with processing')
+      }
+
+      // Session will update automatically via polling
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to auto-proceed'
+      )
+      setAutoProceeding(false)
+    }
+  }
+
+  const handleRegenerateConcept = async () => {
+    if (!session) return
+
+    setRegenerating(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/concept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ regenerate: true }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to regenerate concept')
+      }
+
+      const data = await response.json()
+
+      // Update session with new concept
+      setSession((prev) =>
+        prev ? { ...prev, concept: data.concept } : prev
+      )
+
+      // Reset timer when concept is regenerated
+      setTimeRemaining(180)
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to regenerate concept'
+      )
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
+  const handleColorChange = async (newColors: string[]) => {
+    if (!session) return
+
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scraped_data: {
+            colors: newColors,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update colors')
+      }
+
+      const data = await response.json()
+
+      // Update session with new colors
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              scraped_data: {
+                ...prev.scraped_data,
+                colors: newColors,
+              },
+            }
+          : prev
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update colors')
+    }
+  }
+
+  const handleLogoUpload = async (logoUrl: string) => {
+    if (!session) return
+
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scraped_data: {
+            logo: logoUrl,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update logo')
+      }
+
+      const data = await response.json()
+
+      // Update session with new logo
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              scraped_data: {
+                ...prev.scraped_data,
+                logo: logoUrl,
+              },
+            }
+          : prev
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update logo')
+      throw err // Re-throw so LogoUploader can handle it
+    }
+  }
+
+  const handleContinueProcessing = async () => {
+    if (!session) return
+
+    setContinuingProcessing(true)
+    setError(null)
+
+    try {
+      // Trigger background processing to continue with concept generation
+      const response = await fetch(`/api/sessions/${sessionId}/process`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to continue processing')
+      }
+
+      // Update session to remove manual input flags
+      setSession((prev) =>
+        prev
+          ? {
+              ...prev,
+              scraped_data: {
+                ...prev.scraped_data,
+                requires_manual_input: false,
+                missing_fields: [],
+              },
+            }
+          : prev
+      )
+
+      // Session will update automatically via polling
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to continue processing'
+      )
+      setContinuingProcessing(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -137,6 +376,26 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
   const statusInfo = STATUS_INFO[session.status]
   const isComplete = session.status === 'complete'
   const isFailed = session.status === 'failed'
+  const canEdit = isComplete || editMode
+
+  // Check if manual input is required
+  const requiresManualInput = session.scraped_data?.requires_manual_input === true
+  const missingFields = session.scraped_data?.missing_fields || []
+
+  // Check if all required fields are now filled
+  const hasLogo = session.scraped_data?.logo && session.scraped_data.logo !== ''
+  const hasMinColors = session.scraped_data?.colors && session.scraped_data.colors.length >= 2
+
+  const canProceed = requiresManualInput &&
+    (missingFields.includes('logo') ? hasLogo : true) &&
+    (missingFields.includes('colors') ? hasMinColors : true)
+
+  // Format timer display
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 p-4">
@@ -176,16 +435,222 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
           </CardContent>
         </Card>
 
+        {/* Manual Input Required Warning */}
+        {requiresManualInput && (
+          <Card className="mb-8 border-amber-500 bg-amber-50">
+            <CardHeader>
+              <CardTitle className="text-amber-900 flex items-center gap-2">
+                ⚠️ Manual Input Required
+              </CardTitle>
+              <CardDescription className="text-amber-800">
+                We couldn't automatically extract some required information from your website. Please provide the missing details below to continue.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-amber-900">
+                  Missing information:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-amber-800">
+                  {missingFields.map((field) => (
+                    <li key={field}>
+                      {field === 'logo' && 'Brand logo (upload below)'}
+                      {field === 'colors' && 'Brand colors (minimum 2 colors required)'}
+                    </li>
+                  ))}
+                </ul>
+
+                {canProceed && (
+                  <div className="mt-4 pt-4 border-t border-amber-200">
+                    <Button
+                      onClick={handleContinueProcessing}
+                      disabled={continuingProcessing}
+                      className="w-full bg-amber-600 hover:bg-amber-700"
+                    >
+                      {continuingProcessing ? 'Processing...' : '✓ Continue with Design Generation'}
+                    </Button>
+                    <p className="text-xs text-amber-700 mt-2 text-center">
+                      All required information has been provided. Click to continue.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Brand Colors */}
+        {(session.scraped_data?.colors && session.scraped_data.colors.length > 0) || requiresManualInput ? (
+          <Card className={`mb-8 ${missingFields.includes('colors') ? 'border-red-500 bg-red-50' : ''}`}>
+            <CardHeader>
+              <CardTitle className={missingFields.includes('colors') ? 'text-red-900' : ''}>
+                🎨 Brand Colors {missingFields.includes('colors') && '(Required)'}
+              </CardTitle>
+              <CardDescription className={missingFields.includes('colors') ? 'text-red-700' : ''}>
+                {missingFields.includes('colors')
+                  ? 'Add at least 2 brand colors to continue'
+                  : 'Edit your brand colors to refine the design concept'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ColorPicker
+                colors={session.scraped_data?.colors || []}
+                onChange={handleColorChange}
+                disabled={session.status === 'failed' || (session.status === 'complete' && !editMode)}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* Brand Logo */}
+        <Card className={`mb-8 ${missingFields.includes('logo') ? 'border-red-500 bg-red-50' : ''}`}>
+          <CardHeader>
+            <CardTitle className={missingFields.includes('logo') ? 'text-red-900' : ''}>
+              🏢 Brand Logo {missingFields.includes('logo') && '(Required)'}
+            </CardTitle>
+            <CardDescription className={missingFields.includes('logo') ? 'text-red-700' : ''}>
+              {missingFields.includes('logo')
+                ? 'Upload your brand logo to continue (minimum 500x500px)'
+                : 'Upload or replace your brand logo to customize the design'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LogoUploader
+              currentLogo={typeof session.scraped_data?.logo === 'string' ? session.scraped_data.logo : session.scraped_data?.logo?.stored_url}
+              onUpload={handleLogoUpload}
+              disabled={session.status === 'failed' || (session.status === 'complete' && !editMode)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Edit Mode Toggle for Completed Sessions */}
+        {isComplete && !editMode && (
+          <Card className="mb-8 border-blue-500 bg-blue-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-blue-900">Want to make changes?</p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Enable edit mode to regenerate concepts, motifs, or adjust colors
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setEditMode(true)}
+                  variant="outline"
+                  className="bg-white"
+                >
+                  ✏️ Enable Edit Mode
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {editMode && isComplete && (
+          <Card className="mb-8 border-amber-500 bg-amber-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-amber-900">🔄 Edit Mode Active</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    Make your changes and regenerate designs as needed
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setEditMode(false)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white"
+                >
+                  Exit Edit Mode
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Concept */}
         {session.concept && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>💡 Design Concept</CardTitle>
+              <div className="flex items-start justify-between">
+                <CardTitle>💡 Design Concept</CardTitle>
+                {session.status !== 'failed' && (session.status !== 'complete' || editMode) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRegenerateConcept}
+                    disabled={regenerating}
+                  >
+                    {regenerating ? 'Generating...' : '🔄 Regenerate'}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">{session.concept}</p>
+
+              {/* Timer Display */}
+              {session.status === 'concept' && timeRemaining !== null && timeRemaining > 0 && !autoProceeding && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">
+                        Review Time Remaining
+                      </p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Processing will continue automatically when timer expires
+                      </p>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-900 ml-4">
+                      {formatTime(timeRemaining)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Auto-proceeding indicator */}
+              {autoProceeding && (
+                <div className="mt-4">
+                  <Progress value={undefined} className="h-2" />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Proceeding to motif and product generation...
+                  </p>
+                </div>
+              )}
+
+              {/* Regenerating indicator */}
+              {regenerating && (
+                <div className="mt-4">
+                  <Progress value={undefined} className="h-2" />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Creating a new concept variation...
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Design Motif */}
+        {session.motif_image_url && (
+          <MotifDisplay
+            motifImageUrl={session.motif_image_url}
+            sessionId={sessionId}
+            onRegenerateComplete={async () => {
+              // Refresh session data after motif regeneration
+              const response = await fetch(`/api/sessions/${sessionId}?token=${token}`)
+              if (response.ok) {
+                const data = await response.json()
+                setSession(data)
+                // Reset timer when motif is regenerated
+                if (data.status === 'motif') {
+                  setTimeRemaining(180)
+                }
+              }
+            }}
+            disabled={session.status === 'failed' || (session.status === 'complete' && !editMode)}
+          />
         )}
 
         {/* Product Mockups */}
