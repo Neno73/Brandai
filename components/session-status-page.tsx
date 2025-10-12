@@ -69,7 +69,10 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch(`/api/sessions/${sessionId}?token=${token}`)
+        const url = token
+          ? `/api/sessions/${sessionId}?token=${token}`
+          : `/api/sessions/${sessionId}`
+        const response = await fetch(url)
 
         if (!response.ok) {
           const data = await response.json()
@@ -716,7 +719,10 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
                 motifImageUrl={session.motif_image_url}
                 sessionId={sessionId}
                 onRegenerateComplete={async () => {
-                  const response = await fetch(`/api/sessions/${sessionId}?token=${token}`)
+                  const url = token
+                    ? `/api/sessions/${sessionId}?token=${token}`
+                    : `/api/sessions/${sessionId}`
+                  const response = await fetch(url)
                   if (response.ok) {
                     const data = await response.json()
                     setSession(data)
