@@ -31,27 +31,17 @@ export async function validateCredentials(
   email: string,
   password: string
 ): Promise<boolean> {
-  console.log('[TEMP DEBUG] Validating credentials')
-  console.log('[TEMP DEBUG] Input email:', JSON.stringify(email))
-  console.log('[TEMP DEBUG] Expected email:', JSON.stringify(ADMIN_EMAIL))
-  console.log('[TEMP DEBUG] Email match:', email === ADMIN_EMAIL)
-  console.log('[TEMP DEBUG] Has password hash:', !!ADMIN_PASSWORD_HASH)
-  console.log('[TEMP DEBUG] Password hash length:', ADMIN_PASSWORD_HASH?.length)
-
   // Check email matches admin email
   if (email !== ADMIN_EMAIL) {
-    console.log('[TEMP DEBUG] Email mismatch - failing')
     return false
   }
 
   // Verify password against hash
   try {
-    console.log('[TEMP DEBUG] Starting password comparison')
     const result = await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
-    console.log('[TEMP DEBUG] Password comparison result:', result)
     return result
   } catch (error) {
-    console.error('[TEMP DEBUG] Failed to validate credentials:', error)
+    console.error('Failed to validate credentials:', error)
     return false
   }
 }
