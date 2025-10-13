@@ -6,9 +6,14 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production'
 )
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@brendai.sols.mk'
-const ADMIN_PASSWORD_HASH =
-  process.env.ADMIN_PASSWORD_HASH ||
-  '$2a$10$rO8zF2v3hU9zGqVxZqVxZeOqVxZqVxZqVxZqVxZqVxZqVxZqVxZ' // default: "admin123"
+
+// Decode ADMIN_PASSWORD_HASH from Base64 to avoid Next.js $ expansion issues
+// Store hash in Base64 format in environment variables to prevent Next.js from
+// interpreting $ characters as variable references (e.g., $2a becomes empty)
+const ADMIN_PASSWORD_HASH_RAW = process.env.ADMIN_PASSWORD_HASH || ''
+const ADMIN_PASSWORD_HASH = ADMIN_PASSWORD_HASH_RAW
+  ? Buffer.from(ADMIN_PASSWORD_HASH_RAW, 'base64').toString('utf-8')
+  : '$2a$10$rO8zF2v3hU9zGqVxZqVxZeOqVxZqVxZqVxZqVxZqVxZqVxZqVxZ' // default: "admin123"
 
 const COOKIE_NAME = 'admin_session'
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
