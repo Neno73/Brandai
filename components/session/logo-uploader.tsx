@@ -23,21 +23,40 @@ export function LogoUploader({
   const [preview, setPreview] = useState<string | null>(currentLogo || null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const validateImage = (file: File): Promise<{ valid: boolean; error?: string }> => {
+  const isVectorFile = (file: File): boolean => {
+    const fileName = file.name.toLowerCase()
+    return fileName.endsWith('.svg') || fileName.endsWith('.ai') || fileName.endsWith('.eps')
+  }
+
+  const validateImage = (file: File): Promise<{ valid: boolean; error?: string; isVector: boolean }> => {
     return new Promise((resolve) => {
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        resolve({ valid: false, error: 'File must be an image' })
+      // Check if it's a vector file
+      const vector = isVectorFile(file)
+
+      // Check file type (allow vector files or regular images)
+      if (!vector && !file.type.startsWith('image/')) {
+        resolve({ valid: false, error: 'File must be an image or vector file (SVG, AI, EPS)', isVector: false })
         return
       }
 
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        resolve({ valid: false, error: 'Image must be smaller than 5MB' })
+      // Check file size (max 10MB for vectors, 5MB for raster)
+      const maxSize = vector ? 10 * 1024 * 1024 : 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        resolve({
+          valid: false,
+          error: vector ? 'Vector file must be smaller than 10MB' : 'Image must be smaller than 5MB',
+          isVector: vector,
+        })
         return
       }
 
-      // Check image dimensions
+      // Skip dimension check for vector files
+      if (vector) {
+        resolve({ valid: true, isVector: true })
+        return
+      }
+
+      // Check image dimensions for raster files
       const img = new window.Image()
       const objectUrl = URL.createObjectURL(file)
 
@@ -48,15 +67,16 @@ export function LogoUploader({
           resolve({
             valid: false,
             error: 'Image must be at least 500x500 pixels',
+            isVector: false,
           })
         } else {
-          resolve({ valid: true })
+          resolve({ valid: true, isVector: false })
         }
       }
 
       img.onerror = () => {
         URL.revokeObjectURL(objectUrl)
-        resolve({ valid: false, error: 'Invalid image file' })
+        resolve({ valid: false, error: 'Invalid image file', isVector: false })
       }
 
       img.src = objectUrl
@@ -79,31 +99,40 @@ export function LogoUploader({
         return
       }
 
-      // Create preview
-      const previewUrl = URL.createObjectURL(file)
-      setPreview(previewUrl)
+      // Create preview (for raster images only)
+      let previewUrl: string | null = null
+      if (!validation.isVector) {
+        previewUrl = URL.createObjectURL(file)
+        setPreview(previewUrl)
+      }
 
-      // Upload to server
+      // Upload to server - use conversion endpoint for vectors
       const formData = new FormData()
       formData.append('logo', file)
 
-      const response = await fetch('/api/upload/logo', {
+      const endpoint = validation.isVector ? '/api/upload/logo/convert' : '/api/upload/logo'
+      const response = await fetch(endpoint, {
         method: 'POST',
         body: formData,
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to upload logo')
+        throw new Error(data.error || data.message || 'Failed to upload logo')
       }
 
       const data = await response.json()
 
+      // Set preview to the uploaded URL (for vectors, this is the converted PNG)
+      setPreview(data.url)
+
       // Call parent callback
       await onUpload(data.url)
 
-      // Clean up preview URL
-      URL.revokeObjectURL(previewUrl)
+      // Clean up preview URL if we created one
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload logo')
       setPreview(currentLogo || null)
@@ -163,7 +192,7 @@ export function LogoUploader({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.svg,.ai,.eps"
               onChange={handleFileSelect}
               disabled={uploading}
               className="hidden"
@@ -184,7 +213,7 @@ export function LogoUploader({
               </Button>
             </Label>
             <p className="text-xs text-gray-500">
-              PNG, JPG, or SVG. Min 500x500px. Max 5MB.
+              PNG, JPG, SVG, AI, or EPS. Vector files will be converted to PNG. Max 10MB.
             </p>
           </div>
         )}

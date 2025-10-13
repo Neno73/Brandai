@@ -116,6 +116,12 @@ export async function generateMotifPrompt(
     ? '\n\nIMPORTANT: Generate a DIFFERENT visual interpretation than you would normally create. Explore alternative design elements, compositions, or artistic styles while maintaining the core concept and brand colors. Create a fresh, unique motif that feels distinctly different from a typical interpretation.'
     : ''
 
+  // Prepare logo context
+  const hasLogo = !!(scrapedData.logo && scrapedData.logo !== '')
+  const logoContext = hasLogo
+    ? 'The brand has a logo. Create a motif that complements and works harmoniously alongside the logo, not replacing it. The motif should be a supplementary graphic element.'
+    : 'Create a standalone motif that can serve as the primary graphic element for the merchandise.'
+
   // Prepare template variables
   const variables = {
     concept,
@@ -124,6 +130,7 @@ export async function generateMotifPrompt(
     printZones: product.print_zones.join(', '),
     maxColors: product.max_colors.toString(),
     constraints: product.constraints || 'None',
+    logoContext,
     regenerateInstruction,
   }
 
@@ -141,12 +148,15 @@ Print Zones: ${variables.printZones}
 Max Colors: ${variables.maxColors}
 Constraints: ${variables.constraints}
 
+Logo Context: ${variables.logoContext}
+
 Create a detailed image generation prompt (1-2 sentences) that:
 1. Describes the visual motif clearly and specifically
 2. Specifies composition, style, and visual elements
 3. Respects the color and print zone constraints
-4. Avoids text/typography (unless explicitly part of the concept)
-5. Is suitable for ${variables.productName} merchandise
+4. ${hasLogo ? 'Creates a complementary design that works alongside a logo' : 'Serves as a primary graphic element'}
+5. Avoids text/typography (unless explicitly part of the concept)
+6. Is suitable for ${variables.productName} merchandise
 
 Return ONLY the image generation prompt, nothing else.${variables.regenerateInstruction}`
 

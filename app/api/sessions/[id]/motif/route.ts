@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession, updateSession, getProducts } from '@/lib/db/queries'
 import { generateMotif } from '@/lib/services/gemini'
+import { generateMotifImage, generatePlaceholderMotif } from '@/lib/services/imagen'
 import { retryWithBackoff } from '@/lib/utils/error-handling'
 
 export const maxDuration = 120 // 2 minutes max for motif generation
@@ -51,18 +52,39 @@ export async function POST(
     // Use first product (typically T-Shirt) as base for motif generation
     const primaryProduct = products[0]
 
-    // Generate motif with retry logic
+    // Generate motif prompt with retry logic
     const motifPrompt = await retryWithBackoff(
       () => generateMotif(session.concept!, session.scraped_data, primaryProduct, regenerate),
       3,
       1000
     )
 
-    // For MVP, create a placeholder image URL
-    // In production, this would call an actual image generation service
-    const motifImageUrl = `https://via.placeholder.com/800x800.png?text=${encodeURIComponent(
-      'Motif: ' + session.scraped_data.title
-    )}`
+    console.log(`[${sessionId}] Motif prompt generated, calling Imagen API...`)
+
+    // Generate actual motif image using Imagen 3 (Nanobana)
+    let motifImageUrl: string
+
+    try {
+      const imagenResponse = await retryWithBackoff(
+        () => generateMotifImage(
+          motifPrompt,
+          session.scraped_data.colors || [],
+          '1:1'
+        ),
+        2,
+        2000
+      )
+
+      motifImageUrl = imagenResponse.imageUrl
+      console.log(`[${sessionId}] Motif image generated successfully: ${motifImageUrl}`)
+    } catch (imagenError) {
+      console.error(`[${sessionId}] Imagen generation failed, using placeholder:`, imagenError)
+      // Fallback to placeholder if Imagen fails
+      motifImageUrl = generatePlaceholderMotif(
+        session.scraped_data.title,
+        session.scraped_data.colors || []
+      )
+    }
 
     // Update session with new motif
     const updatedData = {

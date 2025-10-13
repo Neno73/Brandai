@@ -3,6 +3,7 @@ import { getSession, updateSession, getProducts } from '@/lib/db/queries'
 import { fetchBrandData } from '@/lib/services/brandfetch'
 import { scrapeWebsiteContent } from '@/lib/services/firecrawl'
 import { generateConcept, generateMotif } from '@/lib/services/gemini'
+import { generateMotifImage, generatePlaceholderMotif } from '@/lib/services/imagen'
 import { sendMerchandiseEmail } from '@/lib/services/email'
 import { retryWithBackoff } from '@/lib/utils/error-handling'
 import type { ScrapedData, ProductImage } from '@/lib/types/session'
@@ -120,11 +121,32 @@ export async function POST(
       1000
     )
 
-    // For MVP, we'll use a placeholder image URL
-    // In production, this would call an image generation service
-    const motifImageUrl = `https://via.placeholder.com/800x800.png?text=${encodeURIComponent(
-      'Motif: ' + scrapedData.title
-    )}`
+    console.log(`[${sessionId}] Motif prompt generated, calling Imagen API...`)
+
+    // Generate actual motif image using Imagen 3 (Nanobana)
+    let motifImageUrl: string
+
+    try {
+      const imagenResponse = await retryWithBackoff(
+        () => generateMotifImage(
+          motifPrompt,
+          scrapedData.colors || [],
+          '1:1'
+        ),
+        2,
+        2000
+      )
+
+      motifImageUrl = imagenResponse.imageUrl
+      console.log(`[${sessionId}] Motif image generated successfully: ${motifImageUrl}`)
+    } catch (imagenError) {
+      console.error(`[${sessionId}] Imagen generation failed, using placeholder:`, imagenError)
+      // Fallback to placeholder if Imagen fails
+      motifImageUrl = generatePlaceholderMotif(
+        scrapedData.title,
+        scrapedData.colors || []
+      )
+    }
 
     await updateSession(sessionId, {
       status: 'products',
