@@ -561,6 +561,52 @@ psql $POSTGRES_URL -c "SELECT id, status, updated_at FROM sessions WHERE id='<se
 psql $POSTGRES_URL -c "UPDATE sessions SET status='failed' WHERE id='<session-id>';"
 ```
 
+### Issue: Admin login fails - ADMIN_PASSWORD_HASH not loading in production
+
+**Problem**: Bcrypt hashes contain `$` characters that Next.js interprets as environment variable references, causing the hash to become empty at runtime in Vercel production.
+
+**Solution**: Store the hash in Base64 format to eliminate special characters:
+
+1. Generate Base64-encoded hash:
+```bash
+# Generate bcrypt hash for your password
+node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('your_password', 10))"
+# Output: $2a$10$YwA8gy8bhfrVavzsS5DVnudlT5r5QrOqoqsxVPrF3k1PiYtzQopIG
+
+# Convert to Base64
+printf '%s' '$2a$10$YwA8gy8bhfrVavzsS5DVnudlT5r5QrOqoqsxVPrF3k1PiYtzQopIG' | base64
+# Output: JDJhJDEwJFl3QThneThiaGZyVmF2enNTNURWbnVkbFQ1cjVRck9xb3FzeFZQckYzazFQaVl0elFvcElH
+```
+
+2. Update environment variables:
+```bash
+# Local .env.local
+ADMIN_PASSWORD_HASH="JDJhJDEwJFl3QThneThiaGZyVmF2enNTNURWbnVkbFQ1cjVRck9xb3FzeFZQckYzazFQaVl0elFvcElH"
+
+# Add to Vercel (all environments)
+printf 'JDJhJDEwJFl3QThneThiaGZyVmF2enNTNURWbnVkbFQ1cjVRck9xb3FzeFZQckYzazFQaVl0elFvcElH' | vercel env add ADMIN_PASSWORD_HASH production
+printf 'JDJhJDEwJFl3QThneThiaGZyVmF2enNTNURWbnVkbFQ1cjVRck9xb3FzeFZQckYzazFQaVl0elFvcElH' | vercel env add ADMIN_PASSWORD_HASH preview
+printf 'JDJhJDEwJFl3QThneThiaGZyVmF2enNTNURWbnVkbFQ1cjVRck9xb3FzeFZQckYzazFQaVl0elFvcElH' | vercel env add ADMIN_PASSWORD_HASH development
+```
+
+3. The `lib/utils/admin-auth.ts` module automatically decodes Base64 at runtime:
+```typescript
+const ADMIN_PASSWORD_HASH_RAW = process.env.ADMIN_PASSWORD_HASH || ''
+const ADMIN_PASSWORD_HASH = ADMIN_PASSWORD_HASH_RAW
+  ? Buffer.from(ADMIN_PASSWORD_HASH_RAW, 'base64').toString('utf-8')
+  : 'default-hash'
+```
+
+4. Verify the fix works:
+```bash
+# Test in production
+curl https://your-domain.vercel.app/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com","password":"your_password"}'
+```
+
+**Why this happens**: Next.js processes `.env` files and expands `$VAR` as variable references. A bcrypt hash like `$2a$10$...` gets interpreted as `$2a` → empty, `$10` → empty, causing the entire hash to vanish.
+
 ## Additional Resources
 
 - **Next.js 14 Docs**: https://nextjs.org/docs
