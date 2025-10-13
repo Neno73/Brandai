@@ -76,7 +76,7 @@ export function LandingPage() {
           </div>
           <div className="flex flex-1 justify-end gap-8">
             <div className="flex items-center gap-9">
-              <a className="text-foreground text-sm font-medium leading-normal" href="/dashboard">Dashboard</a>
+              <a className="text-foreground text-sm font-medium leading-normal" href="/admin">Dashboard</a>
               <a className="text-foreground text-sm font-medium leading-normal" href="#product">Product</a>
               <a className="text-foreground text-sm font-medium leading-normal" href="#pricing">Pricing</a>
               <a className="text-foreground text-sm font-medium leading-normal" href="#blog">Blog</a>

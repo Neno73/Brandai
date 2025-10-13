@@ -102,6 +102,9 @@ export default function AdminDashboard() {
               <Button variant="outline" asChild>
                 <a href="/admin/products">Manage Products</a>
               </Button>
+              <Button variant="outline" asChild>
+                <a href="/admin/prompts">Manage Prompts</a>
+              </Button>
               <Button variant="outline" onClick={handleLogout}>
                 Logout
               </Button>
