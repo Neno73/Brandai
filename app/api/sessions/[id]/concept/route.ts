@@ -34,6 +34,16 @@ export async function POST(
       `[${sessionId}] Generating concept (regenerate: ${regenerate})...`
     )
 
+    // Log data being passed to concept generation
+    console.log(`[${sessionId}] Concept generation with scraped_data:`, {
+      hasScrapedData: !!session.scraped_data,
+      hasLogo: !!session.scraped_data?.logo,
+      colorsCount: session.scraped_data?.colors?.length || 0,
+      fontsCount: session.scraped_data?.fonts?.length || 0,
+      hasTitle: !!session.scraped_data?.title,
+      hasDescription: !!session.scraped_data?.description,
+    })
+
     // Generate concept with retry logic
     const concept = await retryWithBackoff(
       () => generateConcept(session.scraped_data, regenerate),

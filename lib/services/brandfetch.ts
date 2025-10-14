@@ -1,4 +1,5 @@
 import type { ScrapedData } from '@/lib/types/session'
+import { getCachedBrandData, setCachedBrandData } from '@/lib/db/queries'
 import { put } from '@vercel/blob'
 import sharp from 'sharp'
 
@@ -25,10 +26,17 @@ interface BrandfetchBrand {
 }
 
 /**
- * Extract logo URL from Brandfetch API
+ * Fetch brand data from Brandfetch API (single API call)
+ * Extracts logo URL, colors, and fonts from one response
  */
-export async function extractLogo(domain: string): Promise<string | null> {
+async function fetchBrandfetchData(domain: string): Promise<{
+  logoUrl: string | null
+  colors: string[]
+  fonts: string[]
+}> {
   try {
+    console.log(`[Brandfetch] Fetching brand data for domain: ${domain}`)
+
     const response = await fetch(`${BASE_URL}/brands/${domain}`, {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
@@ -36,78 +44,37 @@ export async function extractLogo(domain: string): Promise<string | null> {
     })
 
     if (!response.ok) {
-      console.error('Brandfetch API error:', response.statusText)
-      return null
+      console.error(`[Brandfetch] API error (${response.status}):`, response.statusText)
+      return { logoUrl: null, colors: [], fonts: [] }
     }
 
     const data: BrandfetchBrand = await response.json()
 
-    // Find PNG logo format
+    // Extract logo URL (prefer PNG format)
+    let logoUrl: string | null = null
     const logo = data.logos?.[0]
-    const pngFormat = logo?.formats?.find(f => f.format === 'png')
-    const anyFormat = logo?.formats?.[0]
-
-    return pngFormat?.src || anyFormat?.src || null
-  } catch (error) {
-    console.error('Brandfetch logo extraction error:', error)
-    return null
-  }
-}
-
-/**
- * Extract brand colors from Brandfetch API
- */
-export async function extractColors(domain: string): Promise<string[]> {
-  try {
-    const response = await fetch(`${BASE_URL}/brands/${domain}`, {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-      },
-    })
-
-    if (!response.ok) {
-      console.error('Brandfetch API error:', response.statusText)
-      return []
+    if (logo) {
+      const pngFormat = logo.formats?.find(f => f.format === 'png')
+      const anyFormat = logo.formats?.[0]
+      logoUrl = pngFormat?.src || anyFormat?.src || null
     }
 
-    const data: BrandfetchBrand = await response.json()
-
-    // Extract primary colors
+    // Extract colors (up to 5 valid hex colors)
     const colors =
       data.colors
         ?.filter(c => c.hex && c.hex.match(/^#[0-9A-F]{6}$/i))
         .map(c => c.hex.toUpperCase())
         .slice(0, 5) || []
 
-    return colors
+    // Extract fonts
+    const fonts = data.fonts?.map(f => f.name) || []
+
+    console.log(`[Brandfetch] Extracted: logo=${!!logoUrl}, colors=${colors.length}, fonts=${fonts.length}`)
+
+    return { logoUrl, colors, fonts }
   } catch (error) {
-    console.error('Brandfetch color extraction error:', error)
-    return []
-  }
-}
-
-/**
- * Extract brand fonts from Brandfetch API
- */
-export async function extractFonts(domain: string): Promise<string[]> {
-  try {
-    const response = await fetch(`${BASE_URL}/brands/${domain}`, {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-      },
-    })
-
-    if (!response.ok) {
-      console.error('Brandfetch API error:', response.statusText)
-      return []
-    }
-
-    const data: BrandfetchBrand = await response.json()
-
-    return data.fonts?.map(f => f.name) || []
-  } catch (error) {
-    console.error('Brandfetch font extraction error:', error)
-    return []
+    console.error('[Brandfetch] Data extraction error:', error)
+    return { logoUrl: null, colors: [], fonts: [] }
   }
 }
 
@@ -188,18 +155,26 @@ async function downloadAndUploadLogo(logoUrl: string, domain: string): Promise<{
 }
 
 /**
- * Extract all brand data from Brandfetch API
+ * Extract all brand data from Brandfetch API with 30-day caching
+ * Optimized to make only ONE API call instead of three
+ * Checks cache first to avoid redundant API calls for the same domain
  */
 export async function fetchBrandData(url: string): Promise<Partial<ScrapedData>> {
   try {
     const domain = new URL(url).hostname.replace('www.', '')
     console.log(`[Brandfetch] Starting data extraction for domain: ${domain}`)
 
-    const [logoUrl, colors, fonts] = await Promise.all([
-      extractLogo(domain),
-      extractColors(domain),
-      extractFonts(domain),
-    ])
+    // Check cache first
+    const cachedData = await getCachedBrandData(domain)
+    if (cachedData) {
+      console.log(`[Brandfetch] ✓ Cache HIT for ${domain} - using cached data (no API call)`)
+      return cachedData
+    }
+
+    console.log(`[Brandfetch] Cache MISS for ${domain} - fetching from API`)
+
+    // Single API call to fetch all data (logo, colors, fonts)
+    const { logoUrl, colors, fonts } = await fetchBrandfetchData(domain)
 
     console.log(`[Brandfetch] Extraction complete for ${domain}: logo=${!!logoUrl}, colors=${colors.length}, fonts=${fonts.length}`)
 
@@ -228,11 +203,22 @@ export async function fetchBrandData(url: string): Promise<Partial<ScrapedData>>
       }
     }
 
-    return {
+    const brandData = {
       logo: logoData,
       colors: colors.length >= 2 ? colors : [],
       fonts,
     }
+
+    // Cache the result for 30 days
+    try {
+      await setCachedBrandData(domain, brandData)
+      console.log(`[Brandfetch] ✓ Cached data for ${domain} (30 days)`)
+    } catch (cacheError) {
+      console.warn(`[Brandfetch] Failed to cache data (non-fatal):`, cacheError)
+      // Don't fail if caching fails - just log and continue
+    }
+
+    return brandData
   } catch (error) {
     console.error('Brandfetch brand data extraction error:', error)
     return {

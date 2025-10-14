@@ -56,6 +56,17 @@ export async function POST(
 
     console.log(`[${sessionId}] Starting Stage 3: Product Mockup Generation...`)
 
+    // Log data being passed to product generation
+    console.log(`[${sessionId}] Product generation with data:`, {
+      hasScrapedData: !!session.scraped_data,
+      hasLogo: !!session.scraped_data?.logo,
+      colorsCount: session.scraped_data?.colors?.length || 0,
+      hasConcept: !!session.concept,
+      conceptLength: session.concept?.length || 0,
+      hasMotif: !!session.motif_image_url,
+      motifUrl: session.motif_image_url,
+    })
+
     // Update status to products
     await updateSession(sessionId, { status: 'products' })
 

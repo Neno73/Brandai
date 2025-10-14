@@ -43,6 +43,15 @@ export async function POST(
       `[${sessionId}] Generating motif (regenerate: ${regenerate})...`
     )
 
+    // Log data being passed to motif generation
+    console.log(`[${sessionId}] Motif generation with data:`, {
+      hasScrapedData: !!session.scraped_data,
+      hasLogo: !!session.scraped_data?.logo,
+      colorsCount: session.scraped_data?.colors?.length || 0,
+      hasConcept: !!session.concept,
+      conceptLength: session.concept?.length || 0,
+    })
+
     // Get products to determine primary product for motif generation
     const products = await getProducts()
     if (products.length === 0) {

@@ -176,3 +176,69 @@ export async function archiveProduct(id: string): Promise<Product> {
   `
   return result[0] as Product
 }
+
+// Brand Cache queries
+export interface BrandCacheEntry {
+  domain: string
+  scraped_data: Partial<ScrapedData>
+  cached_at: string
+  expires_at: string
+}
+
+/**
+ * Get cached brand data for a domain if it exists and hasn't expired
+ */
+export async function getCachedBrandData(domain: string): Promise<Partial<ScrapedData> | null> {
+  const result = await sql`
+    SELECT scraped_data FROM brand_cache
+    WHERE domain = ${domain}
+    AND expires_at > NOW()
+  `
+
+  if (result.length === 0) {
+    return null
+  }
+
+  return result[0].scraped_data as Partial<ScrapedData>
+}
+
+/**
+ * Cache brand data for a domain with 30-day expiration
+ */
+export async function setCachedBrandData(domain: string, scrapedData: Partial<ScrapedData>): Promise<void> {
+  await sql`
+    INSERT INTO brand_cache (domain, scraped_data, cached_at, expires_at)
+    VALUES (
+      ${domain},
+      ${JSON.stringify(scrapedData)}::jsonb,
+      NOW(),
+      NOW() + INTERVAL '30 days'
+    )
+    ON CONFLICT (domain)
+    DO UPDATE SET
+      scraped_data = ${JSON.stringify(scrapedData)}::jsonb,
+      cached_at = NOW(),
+      expires_at = NOW() + INTERVAL '30 days'
+  `
+}
+
+/**
+ * Delete expired cache entries (cleanup)
+ */
+export async function cleanupExpiredCache(): Promise<number> {
+  const result = await sql`
+    DELETE FROM brand_cache
+    WHERE expires_at <= NOW()
+  `
+  return result.length || 0
+}
+
+/**
+ * Manually invalidate cache for a specific domain (admin use)
+ */
+export async function invalidateDomainCache(domain: string): Promise<void> {
+  await sql`
+    DELETE FROM brand_cache
+    WHERE domain = ${domain}
+  `
+}
