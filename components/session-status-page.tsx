@@ -8,10 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ColorPicker } from '@/components/session/color-picker'
 import { LogoUploader } from '@/components/session/logo-uploader'
-import { MotifDisplay } from '@/components/session/motif-display'
 import { BrandDataReview } from '@/components/session/brand-data-review'
-import { ConceptReview } from '@/components/session/concept-review'
-import { ProductsDisplay } from '@/components/session/products-display'
 import type { Session, SessionStatus } from '@/lib/types/session'
 
 interface SessionStatusPageProps {
@@ -68,11 +65,7 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [emailSending, setEmailSending] = useState(false)
-  const [regenerating, setRegenerating] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
-  const [autoProceeding, setAutoProceeding] = useState(false)
   const [continuingProcessing, setContinuingProcessing] = useState(false)
-  const [editMode, setEditMode] = useState(false)
   const [proceedingToConceptGen, setProceedingToConceptGen] = useState(false)
 
   useEffect(() => {
@@ -107,109 +100,6 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
 
     return () => clearInterval(interval)
   }, [sessionId, token])
-
-  // Timer countdown effect
-  useEffect(() => {
-    // Start timer when status is 'concept' and concept exists, or when status is 'motif' and motif exists
-    if ((session?.status === 'concept' && session.concept) || (session?.status === 'motif' && session.motif_image_url)) {
-      // Initialize timer to 3 minutes (180 seconds) if not set
-      if (timeRemaining === null) {
-        setTimeRemaining(180)
-      }
-    }
-  }, [session?.status, session?.concept, session?.motif_image_url, timeRemaining])
-
-  // Countdown timer effect
-  useEffect(() => {
-    if (timeRemaining === null || timeRemaining <= 0 || autoProceeding) {
-      return
-    }
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev === null || prev <= 0) {
-          return null
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [timeRemaining, autoProceeding])
-
-  // Auto-proceed when timer reaches 0
-  useEffect(() => {
-    if (timeRemaining === 0 && (session?.status === 'concept' || session?.status === 'motif') && !autoProceeding) {
-      handleAutoProceed()
-    }
-  }, [timeRemaining, session?.status, autoProceeding])
-
-  const handleAutoProceed = async () => {
-    if (!session) return
-
-    setAutoProceeding(true)
-    setError(null)
-
-    try {
-      // Trigger background processing to continue with motif and products
-      const response = await fetch(`/api/sessions/${sessionId}/process`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to proceed with processing')
-      }
-
-      // Session will update automatically via polling
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to auto-proceed'
-      )
-      setAutoProceeding(false)
-    }
-  }
-
-  const handleRegenerateConcept = async () => {
-    if (!session) return
-
-    setRegenerating(true)
-    setError(null)
-
-    try {
-      const response = await fetch(`/api/sessions/${sessionId}/concept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ regenerate: true }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to regenerate concept')
-      }
-
-      const data = await response.json()
-
-      // Update session with new concept
-      setSession((prev) =>
-        prev ? { ...prev, concept: data.concept } : prev
-      )
-
-      // Reset timer when concept is regenerated
-      setTimeRemaining(180)
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to regenerate concept'
-      )
-    } finally {
-      setRegenerating(false)
-    }
-  }
 
   const handleColorChange = async (newColors: string[]) => {
     if (!session) return
@@ -537,13 +427,6 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
     (missingFields.includes('logo') ? hasLogo : true) &&
     (missingFields.includes('colors') ? hasMinColors : true)
 
-  // Format timer display
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
   // Show brand data review page when status is awaiting_approval
   if (isAwaitingApproval && session.scraped_data) {
     return (
@@ -581,24 +464,8 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
     )
   }
 
-  // Show concept review page when status is 'concept'
-  if (session.status === 'concept' && session.concept) {
-    return (
-      <ConceptReview
-        session={session}
-        onRegenerateConcept={handleRegenerateConcept}
-        onNext={handleAutoProceed}
-        regenerating={regenerating}
-        proceeding={autoProceeding}
-      />
-    )
-  }
-
-  // Show products display page when status is 'complete'
-  if (isComplete && session.product_images && session.product_images.length > 0) {
-    return <ProductsDisplay session={session} />
-  }
-
+  // SessionStatusPage should only show processing states
+  // Dedicated pages handle concept, motif, and products display
   return (
     <div className="relative flex h-auto min-h-screen w-full flex-col bg-background">
       <div className="layout-container flex h-full grow flex-col">
@@ -640,9 +507,6 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
             <div className="flex flex-col gap-3 p-4">
               <div className="flex gap-6 justify-between">
                 <p className="text-foreground text-base font-medium leading-normal">{statusInfo.label}</p>
-                {timeRemaining !== null && timeRemaining > 0 && (session.status === 'concept' || session.status === 'motif') && (
-                  <p className="text-muted-foreground text-base font-medium leading-normal">{formatTime(timeRemaining)}</p>
-                )}
               </div>
               <div className="rounded bg-border">
                 <div className="h-2 rounded bg-primary transition-all duration-500" style={{ width: `${statusInfo.progress}%` }}></div>
@@ -707,7 +571,7 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
                   <ColorPicker
                     colors={session.scraped_data?.colors || []}
                     onChange={handleColorChange}
-                    disabled={isFailed || (isComplete && !editMode)}
+                    disabled={isFailed}
                   />
                 </div>
               </div>
@@ -727,255 +591,34 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
                 <LogoUploader
                   currentLogo={typeof session.scraped_data?.logo === 'string' ? session.scraped_data.logo : session.scraped_data?.logo?.stored_url}
                   onUpload={handleLogoUpload}
-                  disabled={isFailed || (isComplete && !editMode)}
+                  disabled={isFailed}
                 />
               </div>
             </div>
 
-            {/* Concept - Detailed View */}
-            {session.concept && (
-              <div className="p-4">
-                <div className="flex flex-wrap justify-between gap-3 mb-4">
-                  <p className="text-foreground tracking-light text-[32px] font-bold leading-tight min-w-72">Creative Concept</p>
+            {/* Email Notification Input */}
+            <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3 mx-auto w-full">
+              <label className="flex flex-col min-w-40 flex-1">
+                <p className="text-foreground text-base font-medium leading-normal pb-2">Email Address</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Get notified when designs are ready"
+                    className="h-14 text-base"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={emailSending}
+                  />
+                  <Button
+                    onClick={handleEmailSubmit}
+                    disabled={emailSending || !email}
+                    className="h-14 px-6"
+                  >
+                    {emailSending ? 'Saving...' : 'Notify Me'}
+                  </Button>
                 </div>
-
-                {/* Concept Description */}
-                <div className="space-y-4 mb-6">
-                  {session.concept.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="text-foreground text-base font-normal leading-normal">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-
-                {/* Brand Assets Section */}
-                <h3 className="text-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">Brand Assets</h3>
-
-                {/* Logo Input */}
-                <div className="flex max-w-[480px] flex-wrap items-end gap-4 py-3">
-                  <label className="flex flex-col min-w-40 flex-1">
-                    <p className="text-foreground text-base font-medium leading-normal pb-2">Logo</p>
-                    <Input
-                      className="h-14 text-base"
-                      value={typeof session.scraped_data?.logo === 'string' ? session.scraped_data.logo : session.scraped_data?.logo?.stored_url || ''}
-                      readOnly
-                      placeholder="Logo URL"
-                    />
-                  </label>
-                </div>
-
-                {/* Color Swatches */}
-                {session.scraped_data?.colors && session.scraped_data.colors.length > 0 && (
-                  <div className="flex flex-wrap gap-5 py-4">
-                    {session.scraped_data.colors.map((color, index) => (
-                      <div
-                        key={index}
-                        className="size-10 rounded-full border-2 border-border"
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Font Selector (placeholder) */}
-                <div className="flex max-w-[480px] flex-wrap items-end gap-4 py-3">
-                  <label className="flex flex-col min-w-40 flex-1">
-                    <p className="text-foreground text-base font-medium leading-normal pb-2">Font</p>
-                    <Input
-                      className="h-14 text-base"
-                      value={session.scraped_data?.fonts?.[0] || 'Work Sans'}
-                      readOnly
-                    />
-                  </label>
-                </div>
-
-                {/* Sentiment Analysis Section */}
-                {(session.scraped_data?.sentiment || session.scraped_data?.tone || session.scraped_data?.audience) && (
-                  <>
-                    <h3 className="text-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">Brand Analysis</h3>
-                    <div className="grid grid-cols-[20%_1fr] gap-x-6">
-                      {session.scraped_data?.sentiment && (
-                        <div className="col-span-2 grid grid-cols-subgrid border-t border-border py-5">
-                          <p className="text-muted-foreground text-sm font-normal leading-normal">Sentiment</p>
-                          <p className="text-foreground text-sm font-normal leading-normal">{session.scraped_data.sentiment}</p>
-                        </div>
-                      )}
-                      {session.scraped_data?.tone && (
-                        <div className="col-span-2 grid grid-cols-subgrid border-t border-border py-5">
-                          <p className="text-muted-foreground text-sm font-normal leading-normal">Tone</p>
-                          <p className="text-foreground text-sm font-normal leading-normal">{session.scraped_data.tone}</p>
-                        </div>
-                      )}
-                      {session.scraped_data?.audience && (
-                        <div className="col-span-2 grid grid-cols-subgrid border-t border-border py-5">
-                          <p className="text-muted-foreground text-sm font-normal leading-normal">Audience</p>
-                          <p className="text-foreground text-sm font-normal leading-normal">{session.scraped_data.audience}</p>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex justify-stretch pt-6">
-                  <div className="flex flex-1 gap-3 flex-wrap justify-start">
-                    {!isFailed && (!isComplete || editMode) && (
-                      <Button
-                        onClick={handleRegenerateConcept}
-                        disabled={regenerating}
-                        className="min-w-[84px] h-10 px-4"
-                      >
-                        {regenerating ? 'Generating...' : 'Regenerate Concept'}
-                      </Button>
-                    )}
-                    {!isFailed && (!isComplete || editMode) && timeRemaining !== null && (
-                      <Button
-                        onClick={handleAutoProceed}
-                        disabled={autoProceeding}
-                        variant="secondary"
-                        className="min-w-[84px] h-10 px-4"
-                      >
-                        {autoProceeding ? 'Processing...' : 'Next'}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Regenerating indicator */}
-                {regenerating && (
-                  <div className="mt-4">
-                    <div className="rounded bg-border">
-                      <div className="h-2 rounded bg-primary animate-pulse"></div>
-                    </div>
-                    <p className="text-muted-foreground text-sm mt-2">Creating a new concept variation...</p>
-                  </div>
-                )}
-
-                {/* Auto-proceeding indicator */}
-                {autoProceeding && (
-                  <div className="mt-4">
-                    <div className="rounded bg-border">
-                      <div className="h-2 rounded bg-primary animate-pulse"></div>
-                    </div>
-                    <p className="text-muted-foreground text-sm mt-2">Proceeding to motif and product generation...</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Design Motif */}
-            {session.motif_image_url && (
-              <MotifDisplay
-                motifImageUrl={session.motif_image_url}
-                sessionId={sessionId}
-                onRegenerateComplete={async () => {
-                  const url = token
-                    ? `/api/sessions/${sessionId}?token=${token}`
-                    : `/api/sessions/${sessionId}`
-                  const response = await fetch(url)
-                  if (response.ok) {
-                    const data = await response.json()
-                    setSession(data)
-                    if (data.status === 'motif') {
-                      setTimeRemaining(180)
-                    }
-                  }
-                }}
-                onApplyToMerchandise={handleAutoProceed}
-                disabled={isFailed || (isComplete && !editMode)}
-                timeRemaining={session.status === 'motif' ? timeRemaining : null}
-                autoProceeding={autoProceeding}
-                regenerating={false}
-              />
-            )}
-
-            {/* Product Mockups */}
-            {isComplete && session.product_images && session.product_images.length > 0 && (
-              <>
-                <div className="flex flex-wrap justify-between gap-3 p-4">
-                  <div className="flex min-w-72 flex-col gap-3">
-                    <p className="text-foreground tracking-light text-[32px] font-bold leading-tight">Generated Products</p>
-                    <p className="text-muted-foreground text-sm font-normal leading-normal">
-                      These mockups are automatically generated based on your brand elements.
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
-                  {session.product_images.map((product) => (
-                    <div key={product.product_id} className="flex flex-col gap-3">
-                      <div
-                        className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-lg"
-                        style={{ backgroundImage: `url("${product.image_url}")` }}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
-                  <label className="flex flex-col min-w-40 flex-1">
-                    <div className="flex w-full flex-1 items-stretch rounded-lg">
-                      <Input
-                        type="email"
-                        placeholder="Enter your email address and we will notify you with a link to see your designs."
-                        className="h-14 text-base rounded-r-none border-r-0 pr-2"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && email) {
-                            handleEmailSubmit()
-                          }
-                        }}
-                        disabled={emailSending}
-                      />
-                      <div className="flex border border-border bg-background items-center justify-center pr-[15px] rounded-r-lg border-l-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256" className="text-muted-foreground">
-                          <path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-96,85.15L52.57,64H203.43ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z" />
-                        </svg>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              </>
-            )}
-
-            {/* Edit Mode Toggle */}
-            {isComplete && (
-              <div className="p-4">
-                <Button
-                  onClick={() => setEditMode(!editMode)}
-                  variant={editMode ? 'secondary' : 'outline'}
-                  className="w-full"
-                >
-                  {editMode ? 'Exit Edit Mode' : '✏️ Enable Edit Mode'}
-                </Button>
-              </div>
-            )}
-
-            {/* Email Input */}
-            {!isComplete && (
-              <div className="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3 mx-auto w-full">
-                <label className="flex flex-col min-w-40 flex-1">
-                  <p className="text-foreground text-base font-medium leading-normal pb-2">Email Address</p>
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      placeholder="Get notified when designs are ready"
-                      className="h-14 text-base"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      disabled={emailSending}
-                    />
-                    <Button
-                      onClick={handleEmailSubmit}
-                      disabled={emailSending || !email}
-                      className="h-14 px-6"
-                    >
-                      {emailSending ? 'Saving...' : 'Notify Me'}
-                    </Button>
-                  </div>
-                </label>
-              </div>
-            )}
+              </label>
+            </div>
 
             {/* Footer Link */}
             <div className="text-center mt-8">
