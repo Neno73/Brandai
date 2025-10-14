@@ -45,7 +45,7 @@ export async function POST(
     // Note: We maintain edit history by storing previous concepts in metadata
     const updatedData = {
       concept,
-      status: session.status === 'scraping' ? 'concept' : session.status, // Only update status if still in scraping phase
+      status: (session.status === 'scraping' || session.status === 'awaiting_approval') ? 'concept' : session.status, // Update status from scraping or awaiting_approval
     }
 
     await updateSession(sessionId, updatedData)
