@@ -189,6 +189,76 @@ export function BrandDataReview({
               className="h-12"
             />
           </div>
+
+          {/* Enhanced: Industries (from Brandfetch) */}
+          {scraped_data?.industries && scraped_data.industries.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <label className="text-foreground text-sm font-medium mb-2 block">
+                Industries (from Brandfetch)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {scraped_data.industries.map((industry, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                  >
+                    {industry}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Enhanced: Founded Year */}
+          {scraped_data?.founded_year && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <label className="text-foreground text-sm font-medium mb-2 block">
+                Founded Year
+              </label>
+              <p className="text-foreground">{scraped_data.founded_year}</p>
+            </div>
+          )}
+
+          {/* Enhanced: Location */}
+          {scraped_data?.location && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <label className="text-foreground text-sm font-medium mb-2 block">
+                Location
+              </label>
+              <p className="text-foreground">
+                {[
+                  scraped_data.location.city,
+                  scraped_data.location.country,
+                ].filter(Boolean).join(', ')}
+              </p>
+            </div>
+          )}
+
+          {/* Enhanced: Social Links */}
+          {scraped_data?.social_links && scraped_data.social_links.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <label className="text-foreground text-sm font-medium mb-2 block">
+                Social Media Links
+              </label>
+              <div className="space-y-1">
+                {scraped_data.social_links.map((link, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground min-w-[100px]">
+                      {link.name}:
+                    </span>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline truncate"
+                    >
+                      {link.url}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -214,6 +284,34 @@ export function BrandDataReview({
               Add or edit your brand colors (comma-separated hex codes)
             </p>
           </div>
+
+          {/* Enhanced: Color Types */}
+          {scraped_data?.colors_enhanced && scraped_data.colors_enhanced.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <label className="text-foreground text-sm font-medium mb-2 block">
+                Color Details (from Brandfetch)
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {scraped_data.colors_enhanced.map((color, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded border border-border"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {color.hex}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {color.type}
+                        {color.brightness !== undefined && ` • ${color.brightness}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Style */}
           <div>
@@ -248,6 +346,41 @@ export function BrandDataReview({
               Primary font family used on your website
             </p>
           </div>
+
+          {/* Enhanced: Font Details */}
+          {scraped_data?.fonts_enhanced && scraped_data.fonts_enhanced.length > 0 && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <label className="text-foreground text-sm font-medium mb-2 block">
+                Font Details (from Brandfetch)
+              </label>
+              <div className="space-y-3">
+                {scraped_data.fonts_enhanced.map((font, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {font.name}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                          {font.type}
+                        </span>
+                        {font.origin && (
+                          <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded">
+                            {font.origin}
+                          </span>
+                        )}
+                        {font.weights && font.weights.length > 0 && (
+                          <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded">
+                            Weights: {font.weights.join(', ')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Imagery Style */}
           <div>

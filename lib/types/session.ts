@@ -29,8 +29,32 @@ export interface ScrapedData {
     width: number
     height: number
   }
-  colors: string[] // hex codes
-  fonts?: string[]
+
+  // ENHANCED: Store multiple logo variants
+  logo_variants?: {
+    icon_dark?: { original_url: string; stored_url: string; format: 'png'; width: number; height: number }
+    icon_light?: { original_url: string; stored_url: string; format: 'png'; width: number; height: number }
+    full_dark?: { original_url: string; stored_url: string; format: 'png'; width: number; height: number }
+    full_light?: { original_url: string; stored_url: string; format: 'png'; width: number; height: number }
+  }
+
+  // ENHANCED: Colors with type and brightness
+  colors: string[] // Keep for backward compatibility
+  colors_enhanced?: Array<{
+    hex: string
+    type: 'brand' | 'accent' | 'dark' | 'light' | 'unknown'
+    brightness?: number
+  }>
+
+  // ENHANCED: Fonts with type and weights
+  fonts?: string[] // Keep for backward compatibility
+  fonts_enhanced?: Array<{
+    name: string
+    type: 'title' | 'body' | 'unknown'
+    origin?: 'Google' | 'custom' | 'system'
+    weights?: number[]
+  }>
+
   title: string
   description: string
   tagline?: string | null
@@ -51,11 +75,27 @@ export interface ScrapedData {
   // Audience & Market
   target_audience?: string
   industry?: string
+
+  // ENHANCED: Store industries array from Brandfetch
+  industries?: string[]
+
   cta_examples?: string[] // Call-to-action examples
   social_platforms?: string[] // Social media platforms
 
+  // ENHANCED: Social media links
+  social_links?: Array<{ name: string; url: string }>
+
   // Company Story
   company_story?: string
+
+  // ENHANCED: Company metadata
+  founded_year?: number
+  location?: {
+    city?: string
+    country?: string
+    countryCode?: string
+  }
+
   headings: string[]
   content: string
 

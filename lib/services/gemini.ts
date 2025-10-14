@@ -56,12 +56,25 @@ export async function generateConcept(
     ? '\n\nIMPORTANT: Generate a DIFFERENT creative concept than you would normally create. Explore alternative angles, themes, or visual directions while still capturing the brand essence. Avoid obvious or common interpretations.'
     : ''
 
-  // Prepare template variables
+  // Prepare template variables with enhanced data
+  const colorInfo = scrapedData.colors_enhanced
+    ? scrapedData.colors_enhanced.map(c => `${c.hex} (${c.type})`).join(', ')
+    : scrapedData.colors?.join(', ') || 'N/A'
+
+  const fontInfo = scrapedData.fonts_enhanced
+    ? scrapedData.fonts_enhanced
+        .map(f => `${f.name} (${f.type}${f.weights ? `, weights: ${f.weights.join(',')}` : ''})`)
+        .join(', ')
+    : scrapedData.fonts?.join(', ') || 'N/A'
+
+  const industryInfo = scrapedData.industries?.join(', ') || scrapedData.industry || 'N/A'
+
   const variables = {
     brandName: scrapedData.title || 'Unknown',
     description: scrapedData.description || 'N/A',
-    colors: scrapedData.colors?.join(', ') || 'N/A',
-    fonts: scrapedData.fonts?.join(', ') || 'N/A',
+    colors: colorInfo,
+    fonts: fontInfo,
+    industries: industryInfo,
     headings: scrapedData.headings?.slice(0, 5).join(', ') || 'N/A',
     regenerateInstruction,
   }
@@ -74,6 +87,7 @@ export async function generateConcept(
 Brand Information:
 - Brand Name: ${variables.brandName}
 - Description: ${variables.description}
+- Industries: ${variables.industries}
 - Primary Colors: ${variables.colors}
 - Typography Style: ${variables.fonts}
 - Key Content Themes: ${variables.headings}
@@ -83,6 +97,7 @@ Create a short, focused merchandise concept (2-3 sentences) that:
 2. Works well across multiple product types (t-shirts, hoodies, mugs, etc.)
 3. Is simple enough to be printed/embroidered
 4. Has broad appeal to the target audience
+5. Considers the brand's industry context
 
 Be specific about visual elements, color usage, and composition style.${variables.regenerateInstruction}`
 

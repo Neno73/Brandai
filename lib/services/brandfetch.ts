@@ -7,7 +7,14 @@ const API_KEY = process.env.BRANDFETCH_API_KEY
 const BASE_URL = 'https://api.brandfetch.io/v2'
 
 interface BrandfetchBrand {
+  name?: string
+  description?: string
+  longDescription?: string
+
+  // Enhanced Logo Data
   logos?: Array<{
+    theme?: 'dark' | 'light'
+    type?: 'icon' | 'logo' | 'symbol' | 'other'
     formats?: Array<{
       src: string
       format: string
@@ -15,24 +22,61 @@ interface BrandfetchBrand {
       height?: number
     }>
   }>
+
+  // Enhanced Color Data
   colors?: Array<{
     hex: string
-    type?: string
+    type?: 'brand' | 'accent' | 'dark' | 'light'
+    brightness?: number
   }>
+
+  // Enhanced Font Data
   fonts?: Array<{
     name: string
-    type?: string
+    type?: 'title' | 'body'
+    origin?: 'Google' | 'custom' | 'system'
+    originId?: string
+    weights?: number[]
+  }>
+
+  // Company Data
+  company?: {
+    industries?: string[]
+    foundedYear?: number
+    location?: {
+      city?: string
+      country?: string
+      countryCode?: string
+    }
+  }
+
+  // Social Links
+  links?: Array<{
+    name: string
+    url: string
   }>
 }
 
 /**
  * Fetch brand data from Brandfetch API (single API call)
- * Extracts logo URL, colors, and fonts from one response
+ * Extracts logo URL, colors, fonts, and enhanced metadata from one response
  */
 async function fetchBrandfetchData(domain: string): Promise<{
   logoUrl: string | null
+  logoVariants: {
+    icon_dark?: string
+    icon_light?: string
+    full_dark?: string
+    full_light?: string
+  }
   colors: string[]
+  colorsEnhanced: Array<{ hex: string; type: 'brand' | 'accent' | 'dark' | 'light' | 'unknown'; brightness?: number }>
   fonts: string[]
+  fontsEnhanced: Array<{ name: string; type: 'title' | 'body' | 'unknown'; origin?: 'Google' | 'custom' | 'system'; weights?: number[] }>
+  industries?: string[]
+  foundedYear?: number
+  location?: { city?: string; country?: string; countryCode?: string }
+  socialLinks?: Array<{ name: string; url: string }>
 }> {
   try {
     console.log(`[Brandfetch] Fetching brand data for domain: ${domain}`)
@@ -45,12 +89,19 @@ async function fetchBrandfetchData(domain: string): Promise<{
 
     if (!response.ok) {
       console.error(`[Brandfetch] API error (${response.status}):`, response.statusText)
-      return { logoUrl: null, colors: [], fonts: [] }
+      return {
+        logoUrl: null,
+        logoVariants: {},
+        colors: [],
+        colorsEnhanced: [],
+        fonts: [],
+        fontsEnhanced: [],
+      }
     }
 
     const data: BrandfetchBrand = await response.json()
 
-    // Extract logo URL (prefer PNG format)
+    // Extract primary logo URL (backward compatibility)
     let logoUrl: string | null = null
     const logo = data.logos?.[0]
     if (logo) {
@@ -59,22 +110,77 @@ async function fetchBrandfetchData(domain: string): Promise<{
       logoUrl = pngFormat?.src || anyFormat?.src || null
     }
 
-    // Extract colors (up to 5 valid hex colors)
-    const colors =
-      data.colors
-        ?.filter(c => c.hex && c.hex.match(/^#[0-9A-F]{6}$/i))
-        .map(c => c.hex.toUpperCase())
-        .slice(0, 5) || []
+    // ENHANCED: Extract logo variants by type and theme
+    const logoVariants: any = {}
+    data.logos?.forEach(logo => {
+      const type = logo.type || 'logo'
+      const theme = logo.theme || 'dark'
+      const pngFormat = logo.formats?.find(f => f.format === 'png')
+      const url = pngFormat?.src || logo.formats?.[0]?.src
 
-    // Extract fonts
-    const fonts = data.fonts?.map(f => f.name) || []
+      if (url) {
+        const key = `${type === 'icon' ? 'icon' : 'full'}_${theme}`
+        if (!logoVariants[key]) {
+          logoVariants[key] = url
+        }
+      }
+    })
 
-    console.log(`[Brandfetch] Extracted: logo=${!!logoUrl}, colors=${colors.length}, fonts=${fonts.length}`)
+    // ENHANCED: Extract colors with type and brightness
+    const colorsEnhanced: Array<{ hex: string; type: 'brand' | 'accent' | 'dark' | 'light' | 'unknown'; brightness?: number }> = data.colors?.map(c => ({
+      hex: c.hex.toUpperCase(),
+      type: (c.type || 'unknown') as 'brand' | 'accent' | 'dark' | 'light' | 'unknown',
+      brightness: c.brightness,
+    })) || []
 
-    return { logoUrl, colors, fonts }
+    // Backward compatible: simple hex array
+    const colors = colorsEnhanced
+      .filter(c => c.hex.match(/^#[0-9A-F]{6}$/i))
+      .map(c => c.hex)
+      .slice(0, 5)
+
+    // ENHANCED: Extract fonts with type and weights
+    const fontsEnhanced: Array<{ name: string; type: 'title' | 'body' | 'unknown'; origin?: 'Google' | 'custom' | 'system'; weights?: number[] }> = data.fonts?.map(f => ({
+      name: f.name,
+      type: (f.type || 'unknown') as 'title' | 'body' | 'unknown',
+      origin: f.origin as 'Google' | 'custom' | 'system' | undefined,
+      weights: f.weights,
+    })) || []
+
+    // Backward compatible: simple name array
+    const fonts = fontsEnhanced.map(f => f.name)
+
+    // ENHANCED: Extract company data
+    const industries = data.company?.industries
+    const foundedYear = data.company?.foundedYear
+    const location = data.company?.location
+    const socialLinks = data.links
+
+    console.log(`[Brandfetch] Extracted: logo=${!!logoUrl}, variants=${Object.keys(logoVariants).length}, colors=${colors.length} (${colorsEnhanced.length} enhanced), fonts=${fonts.length} (${fontsEnhanced.length} enhanced)`)
+    if (industries) console.log(`[Brandfetch] Industries:`, industries)
+
+    return {
+      logoUrl,
+      logoVariants,
+      colors,
+      colorsEnhanced,
+      fonts,
+      fontsEnhanced,
+      industries,
+      foundedYear,
+      location,
+      socialLinks,
+    }
   } catch (error) {
     console.error('[Brandfetch] Data extraction error:', error)
-    return { logoUrl: null, colors: [], fonts: [] }
+    return {
+      logoUrl: null,
+      logoVariants: {},
+      colors: [],
+      colorsEnhanced: [],
+      fonts: [],
+      fontsEnhanced: [],
+    }
   }
 }
 
@@ -173,8 +279,19 @@ export async function fetchBrandData(url: string): Promise<Partial<ScrapedData>>
 
     console.log(`[Brandfetch] Cache MISS for ${domain} - fetching from API`)
 
-    // Single API call to fetch all data (logo, colors, fonts)
-    const { logoUrl, colors, fonts } = await fetchBrandfetchData(domain)
+    // Single API call to fetch all data (logo, colors, fonts, enhanced metadata)
+    const {
+      logoUrl,
+      // logoVariants, // TODO: Use when implementing logo variant downloads
+      colors,
+      colorsEnhanced,
+      fonts,
+      fontsEnhanced,
+      industries,
+      foundedYear,
+      location,
+      socialLinks,
+    } = await fetchBrandfetchData(domain)
 
     console.log(`[Brandfetch] Extraction complete for ${domain}: logo=${!!logoUrl}, colors=${colors.length}, fonts=${fonts.length}`)
 
@@ -205,8 +322,16 @@ export async function fetchBrandData(url: string): Promise<Partial<ScrapedData>>
 
     const brandData = {
       logo: logoData,
+      // TODO: Download and upload logo variants
+      // logo_variants: logoVariants,
       colors: colors.length >= 2 ? colors : [],
+      colors_enhanced: colorsEnhanced,
       fonts,
+      fonts_enhanced: fontsEnhanced,
+      industries,
+      founded_year: foundedYear,
+      location,
+      social_links: socialLinks,
     }
 
     // Cache the result for 30 days
