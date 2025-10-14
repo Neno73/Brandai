@@ -74,7 +74,8 @@ export async function generateImage(
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
-        responseMimeType: 'image/png', // Request image output
+        // Note: responseMimeType is for structured outputs (JSON/XML), not images
+        // Gemini 2.5 Flash Image automatically returns images without this parameter
       },
     })
 
