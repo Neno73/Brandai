@@ -69,7 +69,6 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
   const [email, setEmail] = useState('')
   const [emailSending, setEmailSending] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
-  const [regeneratingMotif, setRegeneratingMotif] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [autoProceeding, setAutoProceeding] = useState(false)
   const [continuingProcessing, setContinuingProcessing] = useState(false)
@@ -209,44 +208,6 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
       )
     } finally {
       setRegenerating(false)
-    }
-  }
-
-  const handleRegenerateMotif = async () => {
-    if (!session) return
-
-    setRegeneratingMotif(true)
-    setError(null)
-
-    try {
-      const response = await fetch(`/api/sessions/${sessionId}/motif`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ regenerate: true }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to regenerate motif')
-      }
-
-      const data = await response.json()
-
-      // Update session with new motif
-      setSession((prev) =>
-        prev ? { ...prev, motif_image_url: data.motif_image_url } : prev
-      )
-
-      // Reset timer when motif is regenerated
-      setTimeRemaining(180)
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to regenerate motif'
-      )
-    } finally {
-      setRegeneratingMotif(false)
     }
   }
 
@@ -620,16 +581,14 @@ export function SessionStatusPage({ sessionId }: SessionStatusPageProps) {
     )
   }
 
-  // Show concept review page when status is 'concept' or 'motif'
-  if ((session.status === 'concept' || session.status === 'motif') && session.concept) {
+  // Show concept review page when status is 'concept'
+  if (session.status === 'concept' && session.concept) {
     return (
       <ConceptReview
         session={session}
         onRegenerateConcept={handleRegenerateConcept}
-        onRegenerateMotif={handleRegenerateMotif}
         onNext={handleAutoProceed}
         regenerating={regenerating}
-        regeneratingMotif={regeneratingMotif}
         proceeding={autoProceeding}
       />
     )

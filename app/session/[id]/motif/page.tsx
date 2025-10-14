@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ConceptReview } from '@/components/session/concept-review'
+import { MotifReview } from '@/components/session/motif-review'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import type { Session } from '@/lib/types/session'
 
-export default function ConceptPage({ params }: { params: { id: string } }) {
+export default function MotifPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -35,9 +35,9 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
         setSession(data)
         setError(null)
 
-        // Redirect if concept doesn't exist yet
-        if (!data.concept) {
-          router.push(`/session/${sessionId}${token ? `?token=${token}` : ''}`)
+        // Redirect if motif doesn't exist yet
+        if (!data.motif_image_url) {
+          router.push(`/session/${sessionId}/concept${token ? `?token=${token}` : ''}`)
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load session')
@@ -56,14 +56,14 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
     return () => clearInterval(interval)
   }, [sessionId, token, router])
 
-  const handleRegenerateConcept = async () => {
+  const handleRegenerateMotif = async () => {
     if (!session) return
 
     setRegenerating(true)
     setError(null)
 
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/concept`, {
+      const response = await fetch(`/api/sessions/${sessionId}/motif`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -73,18 +73,18 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to regenerate concept')
+        throw new Error(data.error || 'Failed to regenerate motif')
       }
 
       const data = await response.json()
 
-      // Update session with new concept
+      // Update session with new motif
       setSession((prev) =>
-        prev ? { ...prev, concept: data.concept } : prev
+        prev ? { ...prev, motif_image_url: data.motif_image_url } : prev
       )
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to regenerate concept'
+        err instanceof Error ? err.message : 'Failed to regenerate motif'
       )
     } finally {
       setRegenerating(false)
@@ -95,9 +95,30 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
     if (!session) return
 
     setProceeding(true)
+    setError(null)
 
-    // Navigate to motif page
-    router.push(`/session/${sessionId}/motif${token ? `?token=${token}` : ''}`)
+    try {
+      // Generate product mockups
+      const response = await fetch(`/api/sessions/${sessionId}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to generate products')
+      }
+
+      // Navigate to products page to see final results
+      router.push(`/session/${sessionId}/products${token ? `?token=${token}` : ''}`)
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to proceed'
+      )
+      setProceeding(false)
+    }
   }
 
   if (loading) {
@@ -105,7 +126,7 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
       <div className="relative flex h-auto min-h-screen w-full flex-col bg-background items-center justify-center">
         <div className="text-center">
           <h2 className="text-foreground text-2xl font-bold mb-4">Loading...</h2>
-          <p className="text-muted-foreground">Fetching your creative concept</p>
+          <p className="text-muted-foreground">Fetching your design motif</p>
         </div>
       </div>
     )
@@ -130,9 +151,9 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <ConceptReview
+    <MotifReview
       session={session}
-      onRegenerateConcept={handleRegenerateConcept}
+      onRegenerateMotif={handleRegenerateMotif}
       onNext={handleNext}
       regenerating={regenerating}
       proceeding={proceeding}

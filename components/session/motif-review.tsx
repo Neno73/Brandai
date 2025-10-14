@@ -6,21 +6,21 @@ import { Input } from '@/components/ui/input'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { Session } from '@/lib/types/session'
 
-interface ConceptReviewProps {
+interface MotifReviewProps {
   session: Session
-  onRegenerateConcept: () => Promise<void>
+  onRegenerateMotif: () => Promise<void>
   onNext: () => Promise<void>
   regenerating: boolean
   proceeding: boolean
 }
 
-export function ConceptReview({
+export function MotifReview({
   session,
-  onRegenerateConcept,
+  onRegenerateMotif,
   onNext,
   regenerating,
   proceeding,
-}: ConceptReviewProps) {
+}: MotifReviewProps) {
   const [email, setEmail] = useState(session.email || '')
   const [emailSaving, setEmailSaving] = useState(false)
 
@@ -76,130 +76,57 @@ export function ConceptReview({
           <div className="flex flex-col max-w-[960px] flex-1">
             {/* Title */}
             <h1 className="text-foreground text-[32px] font-bold leading-tight px-4 pt-8 pb-6">
-              Creative Concept
+              Design Motif
             </h1>
 
-            {/* Concept Description */}
-            <div className="px-4 pb-8">
-              <div className="space-y-4">
-                {session.concept?.split('\n\n').map((paragraph, index) => (
-                  <p key={index} className="text-foreground text-base font-normal leading-relaxed">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+            {/* Description */}
+            <div className="px-4 pb-6">
+              <p className="text-muted-foreground text-base leading-relaxed">
+                This unique design motif has been generated based on your brand&apos;s creative concept and visual identity.
+                It captures the essence of your brand and will be applied to your merchandise designs.
+              </p>
             </div>
 
-            {/* Brand Assets Section */}
-            <div className="px-4 pb-8">
-              <h2 className="text-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-4">
-                Brand Assets
-              </h2>
-
-              {/* Logo */}
-              <div className="pb-6">
-                <label className="flex flex-col gap-2 max-w-[480px]">
-                  <p className="text-foreground text-base font-medium leading-normal">Logo</p>
-                  <Input
-                    className="h-14 text-base bg-secondary"
-                    value={
-                      typeof session.scraped_data?.logo === 'string'
-                        ? session.scraped_data.logo
-                        : session.scraped_data?.logo?.stored_url || 'No logo uploaded'
-                    }
-                    readOnly
-                    placeholder="Logo URL"
-                  />
-                </label>
-              </div>
-
-              {/* Colors */}
-              {session.scraped_data?.colors && session.scraped_data.colors.length > 0 && (
-                <div className="flex items-center gap-4 pb-4">
-                  <p className="text-foreground text-base font-medium leading-normal min-w-[100px]">Colors</p>
-                  <div className="flex gap-3">
-                    {session.scraped_data.colors.slice(0, 3).map((color, index) => (
-                      <div
-                        key={index}
-                        className="size-10 rounded-full border-2 border-border"
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Font */}
-              {session.scraped_data?.fonts && session.scraped_data.fonts.length > 0 && (
-                <div className="pt-4">
-                  <label className="flex flex-col gap-2 max-w-[480px]">
-                    <p className="text-foreground text-base font-medium leading-normal">Font</p>
-                    <Input
-                      className="h-14 text-base bg-secondary"
-                      value={session.scraped_data.fonts[0]}
-                      readOnly
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* Sentiment Analysis Section */}
-            {(session.scraped_data?.sentiment ||
-              session.scraped_data?.tone ||
-              session.scraped_data?.audience) && (
+            {/* Motif Image */}
+            {session.motif_image_url && (
               <div className="px-4 pb-8">
-                <h2 className="text-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-4">
-                  Sentiment Analysis
-                </h2>
-
-                <div className="grid grid-cols-[20%_1fr] gap-x-6 max-w-[600px]">
-                  {session.scraped_data.sentiment && (
-                    <div className="col-span-2 grid grid-cols-subgrid border-t border-border py-5">
-                      <p className="text-muted-foreground text-sm font-normal leading-normal">Sentiment</p>
-                      <p className="text-foreground text-sm font-normal leading-normal">
-                        {session.scraped_data.sentiment}
-                      </p>
-                    </div>
-                  )}
-                  {session.scraped_data.tone && (
-                    <div className="col-span-2 grid grid-cols-subgrid border-t border-border py-5">
-                      <p className="text-muted-foreground text-sm font-normal leading-normal">Tone</p>
-                      <p className="text-foreground text-sm font-normal leading-normal">
-                        {session.scraped_data.tone}
-                      </p>
-                    </div>
-                  )}
-                  {session.scraped_data.audience && (
-                    <div className="col-span-2 grid grid-cols-subgrid border-t border-border py-5">
-                      <p className="text-muted-foreground text-sm font-normal leading-normal">Audience</p>
-                      <p className="text-foreground text-sm font-normal leading-normal">
-                        {session.scraped_data.audience}
-                      </p>
-                    </div>
-                  )}
+                <div className="relative w-full max-w-[700px] aspect-square bg-secondary rounded-lg overflow-hidden border border-border">
+                  <img
+                    src={session.motif_image_url}
+                    alt="Design Motif"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
             )}
 
+            {/* Additional Info */}
+            <div className="px-4 pb-8">
+              <p className="text-foreground text-base font-normal leading-relaxed">
+                Our design system has analyzed your website and identified key visual elements that resonate with your brand identity.
+                These elements, including color palettes, typography, and graphic styles, have been harmonized to create a cohesive motif.
+                This motif will ensure that all your branded merchandise maintains a consistent and recognizable aesthetic,
+                reinforcing your brand&apos;s presence and message.
+              </p>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex gap-3 px-4 pb-8">
               <Button
-                onClick={onRegenerateConcept}
+                onClick={onRegenerateMotif}
                 disabled={regenerating || proceeding}
                 variant="destructive"
                 className="h-10 px-4"
               >
-                {regenerating ? 'Regenerating...' : 'Regenerate Concept'}
+                {regenerating ? 'Regenerating...' : 'Regenerate Motif'}
               </Button>
               <Button
                 onClick={onNext}
-                disabled={regenerating || proceeding || !session.concept}
+                disabled={regenerating || proceeding}
                 variant="outline"
                 className="h-10 px-4"
               >
-                {proceeding ? 'Processing...' : 'Next: Review Motif'}
+                {proceeding ? 'Processing...' : 'Next: Generate Products'}
               </Button>
             </div>
 
@@ -210,8 +137,8 @@ export function ConceptReview({
                   <div className="h-2 rounded bg-primary animate-pulse"></div>
                 </div>
                 <p className="text-muted-foreground text-sm mt-2">
-                  {regenerating && 'Creating a new concept variation...'}
-                  {proceeding && 'Proceeding to motif review...'}
+                  {regenerating && 'Creating a new motif design...'}
+                  {proceeding && 'Proceeding to product generation...'}
                 </p>
               </div>
             )}
