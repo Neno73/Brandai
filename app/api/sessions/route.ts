@@ -58,27 +58,27 @@ export async function POST(request: NextRequest) {
       await sendMagicLink(email, magicLink)
     }
 
-    // Trigger background processing (using Next.js Route Handlers)
+    // Trigger Stage 1: Brand data scraping & extraction (using Next.js Route Handlers)
     // In production, this should be a background job/queue
-    const processUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/sessions/${session.id}/process`
-    console.log(`[Session:${session.id}] Triggering background process at: ${processUrl}`)
+    const scrapeUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/sessions/${session.id}/scrape`
+    console.log(`[Session:${session.id}] Triggering Stage 1 (scraping) at: ${scrapeUrl}`)
 
-    fetch(processUrl, {
+    fetch(scrapeUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
       .then((response) => {
         if (!response.ok) {
-          console.error(`[Session:${session.id}] Background process failed with status: ${response.status}`)
+          console.error(`[Session:${session.id}] Stage 1 (scraping) failed with status: ${response.status}`)
           return response.text().then(text => {
             console.error(`[Session:${session.id}] Error response:`, text)
           })
         } else {
-          console.log(`[Session:${session.id}] Background process triggered successfully`)
+          console.log(`[Session:${session.id}] Stage 1 (scraping) triggered successfully`)
         }
       })
       .catch((err) => {
-        console.error(`[Session:${session.id}] Failed to trigger background processing:`, err)
+        console.error(`[Session:${session.id}] Failed to trigger Stage 1 (scraping):`, err)
       })
 
     return NextResponse.json({

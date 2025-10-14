@@ -3,23 +3,26 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { Session } from '@/lib/types/session'
 
 interface ConceptReviewProps {
   session: Session
   onRegenerateConcept: () => Promise<void>
+  onRegenerateMotif?: () => Promise<void>
   onNext: () => Promise<void>
   regenerating: boolean
+  regeneratingMotif?: boolean
   proceeding: boolean
 }
 
 export function ConceptReview({
   session,
   onRegenerateConcept,
+  onRegenerateMotif,
   onNext,
   regenerating,
+  regeneratingMotif = false,
   proceeding,
 }: ConceptReviewProps) {
   const [email, setEmail] = useState(session.email || '')
@@ -184,19 +187,53 @@ export function ConceptReview({
               </div>
             )}
 
+            {/* Design Motif Section */}
+            {session.motif_image_url && (
+              <div className="px-4 pb-8">
+                <h2 className="text-foreground text-lg font-bold leading-tight tracking-[-0.015em] pb-4">
+                  Design Motif
+                </h2>
+
+                <div className="flex flex-col gap-4">
+                  {/* Motif Image */}
+                  <div className="relative w-full max-w-[600px] aspect-square bg-secondary rounded-lg overflow-hidden border border-border">
+                    <img
+                      src={session.motif_image_url}
+                      alt="Design Motif"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  <p className="text-muted-foreground text-sm max-w-[600px]">
+                    This unique design motif has been generated based on your brand&apos;s creative concept and visual identity.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-3 px-4 pb-8">
               <Button
                 onClick={onRegenerateConcept}
-                disabled={regenerating || proceeding}
+                disabled={regenerating || regeneratingMotif || proceeding}
                 variant="destructive"
                 className="h-10 px-4"
               >
                 {regenerating ? 'Regenerating...' : 'Regenerate Concept'}
               </Button>
+              {session.motif_image_url && onRegenerateMotif && (
+                <Button
+                  onClick={onRegenerateMotif}
+                  disabled={regenerating || regeneratingMotif || proceeding}
+                  variant="destructive"
+                  className="h-10 px-4"
+                >
+                  {regeneratingMotif ? 'Regenerating...' : 'Regenerate Motif'}
+                </Button>
+              )}
               <Button
                 onClick={onNext}
-                disabled={regenerating || proceeding}
+                disabled={regenerating || regeneratingMotif || proceeding || !session.motif_image_url}
                 variant="outline"
                 className="h-10 px-4"
               >
@@ -205,13 +242,15 @@ export function ConceptReview({
             </div>
 
             {/* Progress Indicator */}
-            {(regenerating || proceeding) && (
+            {(regenerating || regeneratingMotif || proceeding) && (
               <div className="px-4 pb-8">
                 <div className="rounded bg-border">
                   <div className="h-2 rounded bg-primary animate-pulse"></div>
                 </div>
                 <p className="text-muted-foreground text-sm mt-2">
-                  {regenerating ? 'Creating a new concept variation...' : 'Proceeding to motif generation...'}
+                  {regenerating && 'Creating a new concept variation...'}
+                  {regeneratingMotif && 'Creating a new motif design...'}
+                  {proceeding && 'Proceeding to product generation...'}
                 </p>
               </div>
             )}

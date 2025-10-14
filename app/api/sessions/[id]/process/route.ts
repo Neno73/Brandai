@@ -1,3 +1,18 @@
+/**
+ * @deprecated This route is deprecated in favor of the new multi-stage workflow.
+ *
+ * New Workflow (3 Stages with User Checkpoints):
+ * 1. POST /api/sessions/[id]/scrape - Stage 1: Brand data extraction (stop for user review)
+ * 2. POST /api/sessions/[id]/concept - Stage 2a: Concept generation
+ * 3. POST /api/sessions/[id]/motif - Stage 2b: Motif generation (stop for user review)
+ * 4. POST /api/sessions/[id]/products - Stage 3: Product mockups + email
+ *
+ * This route is kept for backward compatibility during transition period.
+ * It executes all stages sequentially without user checkpoints.
+ *
+ * DO NOT USE for new implementations - use the staged routes instead.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession, updateSession, getProducts } from '@/lib/db/queries'
 import { fetchBrandData } from '@/lib/services/brandfetch'

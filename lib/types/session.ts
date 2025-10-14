@@ -1,4 +1,11 @@
-export type SessionStatus = 'scraping' | 'concept' | 'motif' | 'products' | 'complete' | 'failed'
+export type SessionStatus =
+  | 'scraping'
+  | 'awaiting_approval'
+  | 'concept'
+  | 'motif'
+  | 'products'
+  | 'complete'
+  | 'failed'
 
 export interface Session {
   id: string
@@ -14,6 +21,7 @@ export interface Session {
 }
 
 export interface ScrapedData {
+  // Core Brand Identity
   logo?: string | {
     original_url: string
     stored_url: string
@@ -25,16 +33,38 @@ export interface ScrapedData {
   fonts?: string[]
   title: string
   description: string
+  tagline?: string | null
+
+  // Visual Style
+  style?: string // Modern, Minimalist, Bold, etc.
+  imagery_style?: string // Minimalist vector, Photorealistic, etc.
+  iconography_style?: string // Line art, Solid fill, etc.
+  logo_description?: string
+
+  // Brand Voice & Messaging
+  tone?: string // Friendly, Professional, Casual, etc.
+  sentiment?: string // Positive, Optimistic, Serious, etc.
+  themes?: string[] // Key themes/topics
+  brand_keywords?: string[] // Brand essence keywords
+  seo_keywords?: string[] // SEO keywords
+
+  // Audience & Market
+  target_audience?: string
+  industry?: string
+  cta_examples?: string[] // Call-to-action examples
+  social_platforms?: string[] // Social media platforms
+
+  // Company Story
+  company_story?: string
   headings: string[]
   content: string
-  tagline?: string | null
-  tone?: string
-  themes?: string[]
-  audience?: string
-  industry?: string
-  sentiment?: string
+
+  // Workflow Flags
   requires_manual_input?: boolean
   missing_fields?: string[]
+
+  // Legacy field (deprecated, kept for backward compatibility)
+  audience?: string
 }
 
 export interface ProductImage {

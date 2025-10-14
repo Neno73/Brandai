@@ -16,6 +16,7 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [regenerating, setRegenerating] = useState(false)
+  const [regeneratingMotif, setRegeneratingMotif] = useState(false)
   const [proceeding, setProceeding] = useState(false)
 
   useEffect(() => {
@@ -91,6 +92,41 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
     }
   }
 
+  const handleRegenerateMotif = async () => {
+    if (!session) return
+
+    setRegeneratingMotif(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/motif`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ regenerate: true }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to regenerate motif')
+      }
+
+      const data = await response.json()
+
+      // Update session with new motif
+      setSession((prev) =>
+        prev ? { ...prev, motif_image_url: data.motif_image_url } : prev
+      )
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to regenerate motif'
+      )
+    } finally {
+      setRegeneratingMotif(false)
+    }
+  }
+
   const handleNext = async () => {
     if (!session) return
 
@@ -98,8 +134,8 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
     setError(null)
 
     try {
-      // Trigger background processing to continue with motif and products
-      const response = await fetch(`/api/sessions/${sessionId}/process`, {
+      // Stage 3: Generate product mockups
+      const response = await fetch(`/api/sessions/${sessionId}/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,11 +144,11 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to proceed with processing')
+        throw new Error(data.error || 'Failed to generate products')
       }
 
-      // Redirect to main session page to watch progress
-      router.push(`/session/${sessionId}${token ? `?token=${token}` : ''}`)
+      // Navigate to products page to see final results
+      router.push(`/session/${sessionId}/products${token ? `?token=${token}` : ''}`)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Failed to proceed'
@@ -154,8 +190,10 @@ export default function ConceptPage({ params }: { params: { id: string } }) {
     <ConceptReview
       session={session}
       onRegenerateConcept={handleRegenerateConcept}
+      onRegenerateMotif={handleRegenerateMotif}
       onNext={handleNext}
       regenerating={regenerating}
+      regeneratingMotif={regeneratingMotif}
       proceeding={proceeding}
     />
   )

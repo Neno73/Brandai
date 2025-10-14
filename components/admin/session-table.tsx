@@ -34,6 +34,7 @@ interface SessionTableProps {
 
 const STATUS_COLORS: Record<SessionStatus, string> = {
   scraping: 'bg-blue-500',
+  awaiting_approval: 'bg-orange-500',
   concept: 'bg-yellow-500',
   motif: 'bg-purple-500',
   products: 'bg-indigo-500',
@@ -73,6 +74,7 @@ export function SessionTable({
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="scraping">Scraping</SelectItem>
+              <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
               <SelectItem value="concept">Concept</SelectItem>
               <SelectItem value="motif">Motif</SelectItem>
               <SelectItem value="products">Products</SelectItem>
