@@ -101,7 +101,7 @@ export function LandingPage() {
               Turn Any Website Into Branded Merchandise
             </h2>
             <p className="text-foreground text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
-              See what your brand could look like in 3 minutes
+              See what your brand could look like on merchandise
             </p>
 
             {/* Error Alert */}
